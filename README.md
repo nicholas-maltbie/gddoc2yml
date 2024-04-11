@@ -15,11 +15,23 @@ to yml compatible with docfx.
 Build package
 
 ```bash
+# Install dependencies
+python3 -m pip install -r requirements.txt
+
 # Install build if required
 # python3 -m pip install build
-python3 -m build
-
 # Project will be created in dir dist
+python3 -m build
+```
+
+## Linting
+
+Lint using [flake8](https://github.com/pycqa/flake8/) tool.
+
+```bash
+# Run flake8 from .flake8 config file
+# Install via python3 -m pip install flake8
+flake8 .
 ```
 
 ## Tests

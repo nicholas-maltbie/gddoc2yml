@@ -2,11 +2,11 @@ import os
 import tempfile
 import shutil
 import unittest
-import xml.etree.ElementTree as ET
 
 from importlib.resources import files
 from src.gddoc2yml import gdxml2yml
 from src.gddoc2yml.make_rst import State
+
 
 class MyTestCase1(unittest.TestCase):
     def test_class_yml_from_state(self):
@@ -17,11 +17,12 @@ class MyTestCase1(unittest.TestCase):
             for xml_doc in xml_docs:
                 shutil.copyfile(xml_doc, os.path.join(tmpdirname, xml_doc.name))
 
-            state:State = gdxml2yml._get_class_state_from_docs([tmpdirname])
+            state: State = gdxml2yml._get_class_state_from_docs([tmpdirname])
             xml_files = [f for f in os.listdir(tmpdirname) if f.endswith(".xml")]
 
             assert len(xml_files) > 0
             assert len(state.classes) == len(xml_files)
+
 
 if __name__ == '__main__':
     unittest.main()

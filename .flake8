@@ -1,0 +1,10 @@
+[flake8]
+# Exclude imported projects and files
+exclude =
+    ./godot,
+    ./src/gddoc2yml/make_rst.py,
+    ./src/gddoc2yml/version.py
+
+max-complexity=10
+
+max-line-length = 120
