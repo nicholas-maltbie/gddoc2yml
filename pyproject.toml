@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0", "pathvalidate>=3.2.0", "PyYAML>=6.0.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gddoc2yml"
+version = "0.0.1"
+authors = [
+  { name="Nick Maltbie", email="nick.dmalt@gmail.com" },
+]
+description = "Convert godot xml docs to docfx yml"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+
+  "License :: OSI Approved :: MIT License",
+
+  "Intended Audience :: Developers",
+
+  "Topic :: Software Development :: Documentation",
+  "Operating System :: OS Independent",
+
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.6",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "pathvalidate",
+  "PyYAML"
+]
+keywords = ["godot", "docfx", "yml", "xml", "documentation"]
+
+[project.urls]
+Homepage = "https://github.com/nicholas-maltbie/gddoc2yml"
+Issues = "https://github.com/nicholas-maltbie/gddoc2yml/issues"
+
+[project.scripts]
+gdxml2yml = "gddoc2yml:gdxml2yml"
