@@ -1,0 +1,11 @@
+[run]
+
+# Source files
+source=
+    src
+    tests
+
+# Omit files that were copied from godot repo
+omit=
+    src\gddoc2yml\make_rst.py
+    src\gddoc2yml\version.py

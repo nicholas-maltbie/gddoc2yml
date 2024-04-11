@@ -24,12 +24,37 @@ python3 -m build
 
 ## Tests
 
+Run tests for project via Python's unittest module -- [Unit testing framework](https://docs.python.org/3/library/unittest.html)
+
 ```bash
 python3 -m unittest
+```
+
+### Code Coverage
+
+Compute code coverage using [coveragepy](https://github.com/nedbat/coveragepy)
+
+```bash
+# Get code coverage using coverage
+# Install via python -m pip install coverage
+coverage run -m unittest discover
+
+# Get results
+coverage report -m
 ```
 
 ## Example
 
 ```bash
-python3 src/gddoc2yml/gdxml2yml.py godot/doc/classes out
+# Build latest version of package
+python3 -m build
+
+# Install from dist dir
+python3 -m pip install dist/gddoc2yml-0.0.1-py3-none-any.whl
+
+# Generate docs using gdxml2yml
+gdxml2yml godot/doc/classes doc/api
+
+# Startup docfx website
+dotnet tool run docfx --serve doc/docfx.json
 ```

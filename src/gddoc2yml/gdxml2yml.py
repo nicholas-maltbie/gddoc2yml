@@ -134,12 +134,15 @@ def _get_class_state_from_docs(paths: List[str]) -> State:
             print_error(f"{name}.xml: Exception while parsing class: {e}", state)
     return state
 
-def main() -> None:
+def _get_parser():
     parser = argparse.ArgumentParser(description='Convert godot documentation xml file to yml for docfx.')
     parser.add_argument("path", nargs="+", help="A path to an XML file or a directory containing XML files to parse.")
     parser.add_argument("--filter", default="", help="The filepath pattern for XML files to filter.")
     parser.add_argument('output', help='output folder to store all generated yml files.')
-    args = parser.parse_args()
+    return parser
+
+def main() -> None:
+    args = _get_parser().parse_args()
 
     state:State = _get_class_state_from_docs(args.path)
 

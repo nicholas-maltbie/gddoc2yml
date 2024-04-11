@@ -160,4 +160,5 @@ cython_debug/
 #.idea/
 
 ## Output for website
-out
+doc/_site
+doc/api

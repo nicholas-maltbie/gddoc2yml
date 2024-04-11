@@ -42,4 +42,4 @@ Homepage = "https://github.com/nicholas-maltbie/gddoc2yml"
 Issues = "https://github.com/nicholas-maltbie/gddoc2yml/issues"
 
 [project.scripts]
-gdxml2yml = "gddoc2yml:gdxml2yml"
+gdxml2yml = "gddoc2yml.gdxml2yml:main"
