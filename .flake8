@@ -1,6 +1,7 @@
 [flake8]
 # Exclude imported projects and files
 exclude =
+    ./build
     ./godot,
     ./src/gddoc2yml/make_rst.py,
     ./src/gddoc2yml/version.py
