@@ -1,14 +1,15 @@
-name: Python package
+name: Pull Request Validation
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
+concurrency:
+  group: package-${{ github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
