@@ -16,10 +16,10 @@ jobs:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.12"
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
@@ -38,4 +38,3 @@ jobs:
         python -m twine check dist/*
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-
