@@ -57,12 +57,11 @@ coverage report -m
 
 ## Example
 
-```bash
-# Build latest version of package
-python3 -m build
+Build godot docs using latest gddoc2yml.
 
-# Install from dist dir
-python3 -m pip install dist/gddoc2yml-0.0.1-py3-none-any.whl
+```bash
+# Install from repo
+python3 -m pip install .
 
 # Generate docs using gdxml2yml
 gdxml2yml godot/doc/classes doc/api
