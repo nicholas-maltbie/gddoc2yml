@@ -44,4 +44,4 @@ jobs:
       run: |
         python3 -m pip install .
         gdxml2yml godot/doc/classes doc/api
-        dotnet tool run docfx --serve doc/docfx.json
+        dotnet tool run docfx doc/docfx.json
