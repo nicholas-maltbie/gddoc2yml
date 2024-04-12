@@ -44,6 +44,8 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
     steps:
     - uses: actions/checkout@v3
       with:
@@ -65,11 +67,11 @@ jobs:
         python3 -m pip install .
         gdxml2yml godot/doc/classes doc/api
         dotnet tool run docfx doc/docfx.json
-  - name: Fix permissions
-    run: |
-      chmod -c -R +rX "doc/_site/" | while read line; do
-        echo "::warning title=Invalid file permissions automatically fixed::$line"
-      done
+    - name: Fix permissions
+      run: |
+        chmod -c -R +rX "doc/_site/" | while read line; do
+          echo "::warning title=Invalid file permissions automatically fixed::$line"
+        done
     - name: Upload Site Artifact
       uses: actions/upload-pages-artifact@v3
       with:
