@@ -102,23 +102,13 @@ def make_type(klass: str, state: State) -> str:
         return f"``{klass}``"
 
     link_type = klass
-    is_array = False
-
-    if link_type.endswith("[]"):  # Typed array, strip [] to link to contained type.
-        link_type = link_type[:-2]
-        is_array = True
-
     if link_type in state.classes:
-        type_rst = f":ref:`{link_type}<class_{link_type}>`"
-        if is_array:
-            type_rst = f":ref:`Array<class_Array>`\\[{type_rst}\\]"
-        return type_rst
+        type_xref = f"<xref href=\"{link_type}\" data-throw-if-not-resolved=\"false\"></xref>"
+        return type_xref
 
     print_error(f'{state.current_class}.xml: Unresolved type "{link_type}".', state)
-    type_rst = f"``{link_type}``"
-    if is_array:
-        type_rst = f":ref:`Array<class_Array>`\\[{type_rst}\\]"
-    return type_rst
+    type_xref = f"``{link_type}``"
+    return type_xref
 
 
 def is_in_tagset(tag_text: str, tagset: List[str]) -> bool:
