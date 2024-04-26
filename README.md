@@ -9,6 +9,8 @@ to yml compatible with docfx.
 * [Godot -- make_rst.py](https://github.com/godotengine/godot/blob/master/doc/tools/make_rst.py)
 * [DocFx -- Github](https://github.com/dotnet/docfx)
 * [DocFx -- Introduction to Multiple Languages Support](https://xxred.gitee.io/docfx/tutorial/universalreference/intro_multiple_langs_support.html)
+* [DocFx -- PageViewModel.cs](https://github.com/dotnet/docfx/blob/main/src/Docfx.DataContracts.UniversalReference/PageViewModel.cs)
+* [DocFx -- Recommended XML tags for C#](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags)
 
 ## Setup
 
