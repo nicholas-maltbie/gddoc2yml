@@ -86,9 +86,9 @@ def make_enum(t: str, is_bitfield: bool, state: State) -> str:
         if is_bitfield:
             if not state.classes[c].enums[e].is_bitfield:
                 print_error(f'{state.current_class}.xml: Enum "{t}" is not bitfield.', state)
-            return f"|bitfield|\\[:ref:`{e}<enum_{c}_{e}>`\\]"
+            return f"<xref href=\"t\"></xref>"
         else:
-            return f":ref:`{e}<enum_{c}_{e}>`"
+            return f"<xref href=\"t\"></xref>"
 
     # Don't fail for `Vector3.Axis`, as this enum is a special case which is expected not to be resolved.
     if f"{c}.{e}" != "Vector3.Axis":
@@ -243,7 +243,10 @@ def format_codeblock(
         else:
             code_text = f"{code_text[:code_pos]}\n    {code_text[code_pos + to_skip + 1 :]}"
             code_pos += 5 - to_skip
-    return (f"\n[{opening_formatted}]{code_text}{post_text}", len(f"\n[{opening_formatted}]{code_text}"))
+
+    # Remove extra indentation
+    code_text = code_text.replace("\n    ", "\n")
+    return (f"\n[{opening_formatted}]```{tag_state.name}{code_text}```{post_text}", len(f"\n[{opening_formatted}]{code_text}"))
 
 
 def format_table(f: TextIO, data: List[Tuple[Optional[str], ...]], remove_empty_columns: bool = False) -> None:
@@ -484,11 +487,11 @@ def format_text_block(
                     has_codeblocks_csharp = False
 
                     tag_depth -= 1
-                    tag_text = ""
+                    tag_text = "---"
                     inside_code_tabs = False
                 else:
                     tag_depth += 1
-                    tag_text = "\n.. tabs::"
+                    tag_text = ""
                     inside_code_tabs = True
 
             elif is_in_tagset(tag_state.name, RESERVED_CODEBLOCK_TAGS):
@@ -502,7 +505,7 @@ def format_text_block(
                         )
                     else:
                         has_codeblocks_gdscript = True
-                    tag_text = "\n .. code-tab:: gdscript\n"
+                    tag_text = "\n# [gdscript](#tab/gdscript)\n"
                 elif tag_state.name == "csharp":
                     if not inside_code_tabs:
                         print_error(
@@ -511,7 +514,7 @@ def format_text_block(
                         )
                     else:
                         has_codeblocks_csharp = True
-                    tag_text = "\n .. code-tab:: csharp\n"
+                    tag_text = "\n# [C#](#tab/csharp)\n"
                 else:
                     state.script_language_parity_check.add_hit(
                         state.current_class,
@@ -521,7 +524,7 @@ def format_text_block(
                     )
 
                     if "lang=text" in tag_state.arguments.split(" "):
-                        tag_text = "\n.. code:: text\n"
+                        tag_text = "\n# [text](#tab/text)\n"
                     else:
                         tag_text = "\n::\n"
 
@@ -756,7 +759,7 @@ def format_text_block(
                         repl_text = target_name
                         if target_class_name != state.current_class:
                             repl_text = f"{target_class_name}.{target_name}"
-                        tag_text = f":ref:`{repl_text}<class_{target_class_name}{ref_type}_{target_name}>`"
+                        tag_text = f"<xref href=\"{target_class_name}.{target_name}\"></xref>"
                         escape_pre = True
                         escape_post = True
 
@@ -866,10 +869,10 @@ def format_text_block(
                 tag_text = ""
 
             elif tag_state.name == "lb":
-                tag_text = "\\["
+                tag_text = "["
 
             elif tag_state.name == "rb":
-                tag_text = "\\]"
+                tag_text = "]"
 
             elif tag_state.name == "kbd":
                 tag_text = "`"
@@ -899,12 +902,6 @@ def format_text_block(
                     tag_text = f"``{tag_text}``"
                     escape_pre = True
                     escape_post = True
-
-        # Properly escape things like `[Node]s`
-        if escape_pre and pre_text and pre_text[-1] not in MARKUP_ALLOWED_PRECEDENT:
-            pre_text += "\\ "
-        if escape_post and post_text and post_text[0] not in MARKUP_ALLOWED_SUBSEQUENT:
-            post_text = "\\ " + post_text
 
         next_brac_pos = post_text.find("[", 0)
         iter_pos = 0
