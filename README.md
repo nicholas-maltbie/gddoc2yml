@@ -33,7 +33,7 @@ Lint using [flake8](https://github.com/pycqa/flake8/) tool.
 ```bash
 # Run flake8 from .flake8 config file
 # Install via python3 -m pip install flake8
-flake8 .
+python3 -m flake8 .
 ```
 
 ## Tests

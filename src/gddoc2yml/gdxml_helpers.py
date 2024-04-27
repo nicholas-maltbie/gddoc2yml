@@ -18,10 +18,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .make_rst import State, DefinitionBase, TagState, MethodDef, SignalDef, AnnotationDef, \
+from .make_rst import State, DefinitionBase, TagState, MethodDef, \
+    SignalDef, AnnotationDef, ParameterDef, \
     RESERVED_CODEBLOCK_TAGS, RESERVED_CROSSLINK_TAGS, GODOT_DOCS_PATTERN, \
     MARKUP_ALLOWED_PRECEDENT, MARKUP_ALLOWED_SUBSEQUENT
-from typing import List, Dict, TextIO, Tuple, Optional, Any, Union
+from typing import List, Dict, TextIO, Tuple, Optional, Union
 
 STYLES: Dict[str, str] = {}
 STYLES["red"] = "\x1b[91m"
@@ -71,7 +72,7 @@ def make_enum(t: str, is_bitfield: bool, state: State) -> str:
     p = t.find(".")
     if p >= 0:
         c = t[0:p]
-        e = t[p + 1 :]
+        e = t[p + 1:]
         # Variant enums live in GlobalScope but still use periods.
         if c == "Variant":
             c = "@GlobalScope"
@@ -86,9 +87,9 @@ def make_enum(t: str, is_bitfield: bool, state: State) -> str:
         if is_bitfield:
             if not state.classes[c].enums[e].is_bitfield:
                 print_error(f'{state.current_class}.xml: Enum "{t}" is not bitfield.', state)
-            return f"<xref href=\"t\"></xref>"
+            return f"<xref href=\"{c}.{e}\"></xref>"
         else:
-            return f"<xref href=\"t\"></xref>"
+            return f"<xref href=\"{e}\"></xref>"
 
     # Don't fail for `Vector3.Axis`, as this enum is a special case which is expected not to be resolved.
     if f"{c}.{e}" != "Vector3.Axis":
@@ -143,7 +144,7 @@ def get_tag_and_args(tag_text: str) -> TagState:
 
     if delim_pos >= 0:
         tag_name = tag_text[:delim_pos]
-        arguments = tag_text[delim_pos + 1 :].strip()
+        arguments = tag_text[delim_pos + 1:].strip()
 
     closing = False
     if tag_name.startswith("/"):
@@ -175,7 +176,7 @@ def escape_rst(text: str, until_pos: int = -1) -> str:
         pos = text.find("\\", pos, until_pos)
         if pos == -1:
             break
-        text = f"{text[:pos]}\\\\{text[pos + 1 :]}"
+        text = f"{text[:pos]}\\\\{text[pos + 1:]}"
         pos += 2
 
     # Escape * character to avoid interpreting it as emphasis
@@ -184,7 +185,7 @@ def escape_rst(text: str, until_pos: int = -1) -> str:
         pos = text.find("*", pos, until_pos)
         if pos == -1:
             break
-        text = f"{text[:pos]}\\*{text[pos + 1 :]}"
+        text = f"{text[:pos]}\\*{text[pos + 1:]}"
         pos += 2
 
     # Escape _ character at the end of a word to avoid interpreting it as an inline hyperlink
@@ -194,7 +195,7 @@ def escape_rst(text: str, until_pos: int = -1) -> str:
         if pos == -1:
             break
         if not text[pos + 1].isalnum():  # don't escape within a snake_case word
-            text = f"{text[:pos]}\\_{text[pos + 1 :]}"
+            text = f"{text[:pos]}\\_{text[pos + 1:]}"
             pos += 2
         else:
             pos += 1
@@ -217,7 +218,7 @@ def format_codeblock(
     if len(tag_state.arguments) > 0:
         opening_formatted += " " + tag_state.arguments
 
-    code_text = post_text[len(f"[{opening_formatted}]") : end_pos]
+    code_text = post_text[len(f"[{opening_formatted}]"):end_pos]
     post_text = post_text[end_pos:]
 
     # Remove extraneous tabs
@@ -237,16 +238,18 @@ def format_codeblock(
                 state,
             )
 
-        if len(code_text[code_pos + to_skip + 1 :]) == 0:
+        if len(code_text[code_pos + to_skip + 1:]) == 0:
             code_text = f"{code_text[:code_pos]}\n"
             code_pos += 1
         else:
-            code_text = f"{code_text[:code_pos]}\n    {code_text[code_pos + to_skip + 1 :]}"
+            code_text = f"{code_text[:code_pos]}\n    {code_text[code_pos + to_skip + 1:]}"
             code_pos += 5 - to_skip
 
     # Remove extra indentation
     code_text = code_text.replace("\n    ", "\n")
-    return (f"\n[{opening_formatted}]```{tag_state.name}{code_text}```{post_text}", len(f"\n[{opening_formatted}]{code_text}"))
+    return (
+        f"\n[{opening_formatted}]```{tag_state.name}{code_text}```{post_text}",
+        len(f"\n[{opening_formatted}]{code_text}"))
 
 
 def format_table(f: TextIO, data: List[Tuple[Optional[str], ...]], remove_empty_columns: bool = False) -> None:
@@ -296,55 +299,32 @@ def format_table(f: TextIO, data: List[Tuple[Optional[str], ...]], remove_empty_
 
 def sanitize_operator_name(dirty_name: str, state: State) -> str:
     clear_name = dirty_name.replace("operator ", "")
+    lookup = {
+        "!=": "neq",
+        "==": "eq",
+        "<": "lt",
+        "<=": "lte",
+        ">": "gt",
+        ">=": "gte",
+        "+": "sum",
+        "-": "dif",
+        "*": "mul",
+        "/": "div",
+        "%": "mod",
+        "**": "pow",
+        "unary+": "unplus",
+        "unary-": "unminus",
+        "<<": "bwsl",
+        ">>": "bwsr",
+        "&": "bwand",
+        "|": "bwor",
+        "^": "bwxor",
+        "~": "bwnot",
+        "[]": "idx",
+    }
 
-    if clear_name == "!=":
-        clear_name = "neq"
-    elif clear_name == "==":
-        clear_name = "eq"
-
-    elif clear_name == "<":
-        clear_name = "lt"
-    elif clear_name == "<=":
-        clear_name = "lte"
-    elif clear_name == ">":
-        clear_name = "gt"
-    elif clear_name == ">=":
-        clear_name = "gte"
-
-    elif clear_name == "+":
-        clear_name = "sum"
-    elif clear_name == "-":
-        clear_name = "dif"
-    elif clear_name == "*":
-        clear_name = "mul"
-    elif clear_name == "/":
-        clear_name = "div"
-    elif clear_name == "%":
-        clear_name = "mod"
-    elif clear_name == "**":
-        clear_name = "pow"
-
-    elif clear_name == "unary+":
-        clear_name = "unplus"
-    elif clear_name == "unary-":
-        clear_name = "unminus"
-
-    elif clear_name == "<<":
-        clear_name = "bwsl"
-    elif clear_name == ">>":
-        clear_name = "bwsr"
-    elif clear_name == "&":
-        clear_name = "bwand"
-    elif clear_name == "|":
-        clear_name = "bwor"
-    elif clear_name == "^":
-        clear_name = "bwxor"
-    elif clear_name == "~":
-        clear_name = "bwnot"
-
-    elif clear_name == "[]":
-        clear_name = "idx"
-
+    if clear_name in lookup:
+        clear_name = lookup[clear_name]
     else:
         clear_name = "xxx"
         print_error(f'Unsupported operator type "{dirty_name}", please add the missing rule.', state)
@@ -369,7 +349,7 @@ def format_text_block(
         while pos + 1 < len(text) and text[pos + 1] == "\t":
             pos += 1
             indent_level += 1
-        post_text = text[pos + 1 :]
+        post_text = text[pos + 1:]
 
         # Handle codeblocks
         if (
@@ -420,11 +400,8 @@ def format_text_block(
             break
 
         pre_text = text[:pos]
-        post_text = text[endq_pos + 1 :]
-        tag_text = text[pos + 1 : endq_pos]
-
-        escape_pre = False
-        escape_post = False
+        post_text = text[endq_pos + 1:]
+        tag_text = text[pos + 1:endq_pos]
 
         # Tag is a reference to a class.
         if tag_text in state.classes and not inside_code:
@@ -433,8 +410,6 @@ def format_text_block(
                 tag_text = f"**{tag_text}**"
             else:
                 tag_text = make_type(tag_text, state)
-            escape_pre = True
-            escape_post = True
 
         # Tag is a cross-reference or a formatting directive.
         else:
@@ -460,12 +435,13 @@ def format_text_block(
                         tag_depth -= 1
                         inside_code = False
                         ignore_code_warnings = False
-                        escape_post = True
 
                 else:
                     if not ignore_code_warnings and tag_state.closing:
                         print_warning(
-                            f'{state.current_class}.xml: Found a code string that looks like a closing tag "[{tag_state.raw}]" in {context_name}. {code_warning_if_intended_string}',
+                            f'{state.current_class}.xml: Found a code string ' +
+                            f'that looks like a closing tag "[{tag_state.raw}]" ' +
+                            f'in {context_name}. {code_warning_if_intended_string}',
                             state,
                         )
 
@@ -500,7 +476,8 @@ def format_text_block(
                 if tag_state.name == "gdscript":
                     if not inside_code_tabs:
                         print_error(
-                            f"{state.current_class}.xml: GDScript code block is used outside of [codeblocks] in {context_name}.",
+                            f"{state.current_class}.xml: GDScript code block is " +
+                            f"used outside of [codeblocks] in {context_name}.",
                             state,
                         )
                     else:
@@ -509,7 +486,8 @@ def format_text_block(
                 elif tag_state.name == "csharp":
                     if not inside_code_tabs:
                         print_error(
-                            f"{state.current_class}.xml: C# code block is used outside of [codeblocks] in {context_name}.",
+                            f"{state.current_class}.xml: C# code block is " +
+                            f"used outside of [codeblocks] in {context_name}.",
                             state,
                         )
                     else:
@@ -539,25 +517,27 @@ def format_text_block(
                 inside_code = True
                 inside_code_tag = "code"
                 ignore_code_warnings = "skip-lint" in tag_state.arguments.split(" ")
-                escape_pre = True
 
                 if not ignore_code_warnings:
                     endcode_pos = text.find("[/code]", endq_pos + 1)
                     if endcode_pos == -1:
                         print_error(
-                            f"{state.current_class}.xml: Tag depth mismatch for [code]: no closing [/code] in {context_name}.",
+                            f"{state.current_class}.xml: Tag depth mismatch for " +
+                            f"[code]: no closing [/code] in {context_name}.",
                             state,
                         )
                         break
 
-                    inside_code_text = text[endq_pos + 1 : endcode_pos]
+                    inside_code_text = text[endq_pos + 1:endcode_pos]
                     if inside_code_text.endswith("()"):
                         # It's formatted like a call for some reason, may still be a mistake.
                         inside_code_text = inside_code_text[:-2]
 
                     if inside_code_text in state.classes:
                         print_warning(
-                            f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches one of the known classes in {context_name}. {code_warning_if_intended_string}',
+                            f'{state.current_class}.xml: Found a code string ' +
+                            f'"{inside_code_text}" that matches one of the known ' +
+                            f'classes in {context_name}. {code_warning_if_intended_string}',
                             state,
                         )
 
@@ -567,49 +547,73 @@ def format_text_block(
 
                         if target_name in class_def.methods:
                             print_warning(
-                                f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} method in {context_name}. {code_warning_if_intended_string}',
+                                f'{state.current_class}.xml: Found a code string ' +
+                                f'"{inside_code_text}" that matches the ' +
+                                f'{target_class_name}.{target_name} method in ' +
+                                f'{context_name}. {code_warning_if_intended_string}',
                                 state,
                             )
 
                         elif target_name in class_def.constructors:
                             print_warning(
-                                f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} constructor in {context_name}. {code_warning_if_intended_string}',
+                                f'{state.current_class}.xml: Found a code string ' +
+                                f'"{inside_code_text}" that matches the ' +
+                                f'{target_class_name}.{target_name} constructor ' +
+                                f'in {context_name}. {code_warning_if_intended_string}',
                                 state,
                             )
 
                         elif target_name in class_def.operators:
                             print_warning(
-                                f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} operator in {context_name}. {code_warning_if_intended_string}',
+                                f'{state.current_class}.xml: Found a code string ' +
+                                f'"{inside_code_text}" that matches the ' +
+                                f'{target_class_name}.{target_name} operator in ' +
+                                f'{context_name}. {code_warning_if_intended_string}',
                                 state,
                             )
 
                         elif target_name in class_def.properties:
                             print_warning(
-                                f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} member in {context_name}. {code_warning_if_intended_string}',
+                                f'{state.current_class}.xml: Found a code string ' +
+                                f'"{inside_code_text}" that matches the ' +
+                                f'{target_class_name}.{target_name} member in ' +
+                                f'{context_name}. {code_warning_if_intended_string}',
                                 state,
                             )
 
                         elif target_name in class_def.signals:
                             print_warning(
-                                f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} signal in {context_name}. {code_warning_if_intended_string}',
+                                f'{state.current_class}.xml: Found a code string ' +
+                                f'"{inside_code_text}" that matches the ' +
+                                f'{target_class_name}.{target_name} signal in ' +
+                                f'{context_name}. {code_warning_if_intended_string}',
                                 state,
                             )
 
                         elif target_name in class_def.annotations:
                             print_warning(
-                                f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} annotation in {context_name}. {code_warning_if_intended_string}',
+                                f'{state.current_class}.xml: Found a code string ' +
+                                f'"{inside_code_text}" that matches the ' +
+                                f'{target_class_name}.{target_name} annotation ' +
+                                f'in {context_name}. {code_warning_if_intended_string}',
                                 state,
                             )
 
                         elif target_name in class_def.theme_items:
                             print_warning(
-                                f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} theme property in {context_name}. {code_warning_if_intended_string}',
+                                f'{state.current_class}.xml: Found a code string ' +
+                                f'"{inside_code_text}" that matches the ' +
+                                f'{target_class_name}.{target_name} theme property ' +
+                                f'in {context_name}. {code_warning_if_intended_string}',
                                 state,
                             )
 
                         elif target_name in class_def.constants:
                             print_warning(
-                                f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} constant in {context_name}. {code_warning_if_intended_string}',
+                                f'{state.current_class}.xml: Found a code string ' +
+                                f'"{inside_code_text}" that matches the ' +
+                                f'{target_class_name}.{target_name} constant in ' +
+                                f'{context_name}. {code_warning_if_intended_string}',
                                 state,
                             )
 
@@ -617,7 +621,10 @@ def format_text_block(
                             for enum in class_def.enums.values():
                                 if target_name in enum.values:
                                     print_warning(
-                                        f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches the {target_class_name}.{target_name} enum value in {context_name}. {code_warning_if_intended_string}',
+                                        f'{state.current_class}.xml: Found a code ' +
+                                        f'string "{inside_code_text}" that matches ' +
+                                        f'the {target_class_name}.{target_name} enum ' +
+                                        f'value in {context_name}. {code_warning_if_intended_string}',
                                         state,
                                     )
                                     break
@@ -628,7 +635,9 @@ def format_text_block(
                         for param_def in context_params:
                             if param_def.name == inside_code_text:
                                 print_warning(
-                                    f'{state.current_class}.xml: Found a code string "{inside_code_text}" that matches one of the parameters in {context_name}. {code_warning_if_intended_string}',
+                                    f'{state.current_class}.xml: Found a code string ' +
+                                    f'"{inside_code_text}" that matches one of the parameters ' +
+                                    f'in {context_name}. {code_warning_if_intended_string}',
                                     state,
                                 )
                                 break
@@ -663,64 +672,60 @@ def format_text_block(
 
                         # Default to the tag command name. This works by default for most tags,
                         # but method, member, and theme_item have special cases.
-                        ref_type = "_{}".format(tag_state.name)
-
                         if target_class_name in state.classes:
                             class_def = state.classes[target_class_name]
 
                             if tag_state.name == "method":
-                                if target_name.startswith("_"):
-                                    ref_type = "_private_method"
-
                                 if target_name not in class_def.methods:
                                     print_error(
-                                        f'{state.current_class}.xml: Unresolved method reference "{link_target}" in {context_name}.',
+                                        f'{state.current_class}.xml: Unresolved method ' +
+                                        f'reference "{link_target}" in {context_name}.',
                                         state,
                                     )
 
                             elif tag_state.name == "constructor" and target_name not in class_def.constructors:
                                 print_error(
-                                    f'{state.current_class}.xml: Unresolved constructor reference "{link_target}" in {context_name}.',
+                                    f'{state.current_class}.xml: Unresolved constructor ' +
+                                    f'reference "{link_target}" in {context_name}.',
                                     state,
                                 )
 
                             elif tag_state.name == "operator" and target_name not in class_def.operators:
                                 print_error(
-                                    f'{state.current_class}.xml: Unresolved operator reference "{link_target}" in {context_name}.',
+                                    f'{state.current_class}.xml: Unresolved operator reference ' +
+                                    f'"{link_target}" in {context_name}.',
                                     state,
                                 )
 
                             elif tag_state.name == "member":
-                                ref_type = "_property"
-
                                 if target_name not in class_def.properties:
                                     print_error(
-                                        f'{state.current_class}.xml: Unresolved member reference "{link_target}" in {context_name}.',
+                                        f'{state.current_class}.xml: Unresolved member ' +
+                                        f'reference "{link_target}" in {context_name}.',
                                         state,
                                     )
 
                             elif tag_state.name == "signal" and target_name not in class_def.signals:
                                 print_error(
-                                    f'{state.current_class}.xml: Unresolved signal reference "{link_target}" in {context_name}.',
+                                    f'{state.current_class}.xml: Unresolved signal reference ' +
+                                    f'"{link_target}" in {context_name}.',
                                     state,
                                 )
 
                             elif tag_state.name == "annotation" and target_name not in class_def.annotations:
                                 print_error(
-                                    f'{state.current_class}.xml: Unresolved annotation reference "{link_target}" in {context_name}.',
+                                    f'{state.current_class}.xml: Unresolved annotation ' +
+                                    f'reference "{link_target}" in {context_name}.',
                                     state,
                                 )
 
                             elif tag_state.name == "theme_item":
                                 if target_name not in class_def.theme_items:
                                     print_error(
-                                        f'{state.current_class}.xml: Unresolved theme property reference "{link_target}" in {context_name}.',
+                                        f'{state.current_class}.xml: Unresolved theme '
+                                        f'property reference "{link_target}" in {context_name}.',
                                         state,
                                     )
-                                else:
-                                    # Needs theme data type to be properly linked, which we cannot get without a class.
-                                    name = class_def.theme_items[target_name].data_name
-                                    ref_type = f"_theme_{name}"
 
                             elif tag_state.name == "constant":
                                 found = False
@@ -746,33 +751,30 @@ def format_text_block(
 
                                 if not found:
                                     print_error(
-                                        f'{state.current_class}.xml: Unresolved constant reference "{link_target}" in {context_name}.',
+                                        f'{state.current_class}.xml: Unresolved constant reference ' +
+                                        f'"{link_target}" in {context_name}.',
                                         state,
                                     )
 
                         else:
                             print_error(
-                                f'{state.current_class}.xml: Unresolved type reference "{target_class_name}" in method reference "{link_target}" in {context_name}.',
+                                f'{state.current_class}.xml: Unresolved type reference ' +
+                                f'"{target_class_name}" in method reference "{link_target}" in {context_name}.',
                                 state,
                             )
 
-                        repl_text = target_name
-                        if target_class_name != state.current_class:
-                            repl_text = f"{target_class_name}.{target_name}"
                         tag_text = f"<xref href=\"{target_class_name}.{target_name}\"></xref>"
-                        escape_pre = True
-                        escape_post = True
 
                     elif tag_state.name == "enum":
                         tag_text = make_enum(link_target, False, state)
-                        escape_pre = True
-                        escape_post = True
 
                     elif tag_state.name == "param":
                         valid_param_context = isinstance(context, (MethodDef, SignalDef, AnnotationDef))
                         if not valid_param_context:
                             print_error(
-                                f'{state.current_class}.xml: Argument reference "{link_target}" used outside of method, signal, or annotation context in {context_name}.',
+                                f'{state.current_class}.xml: Argument reference ' +
+                                f'"{link_target}" used outside of method, signal, or ' +
+                                f'annotation context in {context_name}.',
                                 state,
                             )
                         else:
@@ -784,13 +786,12 @@ def format_text_block(
                                     break
                             if not found:
                                 print_error(
-                                    f'{state.current_class}.xml: Unresolved argument reference "{link_target}" in {context_name}.',
+                                    f'{state.current_class}.xml: Unresolved argument reference ' +
+                                    f'"{link_target}" in {context_name}.',
                                     state,
                                 )
 
                         tag_text = f"``{link_target}``"
-                        escape_pre = True
-                        escape_post = True
 
             # Formatting directives.
 
@@ -808,15 +809,16 @@ def format_text_block(
                     endurl_pos = text.find("[/url]", endq_pos + 1)
                     if endurl_pos == -1:
                         print_error(
-                            f"{state.current_class}.xml: Tag depth mismatch for [url]: no closing [/url] in {context_name}.",
+                            f"{state.current_class}.xml: Tag depth mismatch for " +
+                            f"[url]: no closing [/url] in {context_name}.",
                             state,
                         )
                         break
-                    link_title = text[endq_pos + 1 : endurl_pos]
+                    link_title = text[endq_pos + 1:endurl_pos]
                     tag_text = make_link(url_target, link_title)
 
                     pre_text = text[:pos]
-                    post_text = text[endurl_pos + 6 :]
+                    post_text = text[endurl_pos + 6:]
 
                     if pre_text and pre_text[-1] not in MARKUP_ALLOWED_PRECEDENT:
                         pre_text += "\\ "
@@ -844,28 +846,22 @@ def format_text_block(
             elif tag_state.name == "i":
                 if tag_state.closing:
                     tag_depth -= 1
-                    escape_post = True
                 else:
                     tag_depth += 1
-                    escape_pre = True
                 tag_text = "*"
 
             elif tag_state.name == "b":
                 if tag_state.closing:
                     tag_depth -= 1
-                    escape_post = True
                 else:
                     tag_depth += 1
-                    escape_pre = True
                 tag_text = "**"
 
             elif tag_state.name == "u":
                 if tag_state.closing:
                     tag_depth -= 1
-                    escape_post = True
                 else:
                     tag_depth += 1
-                    escape_pre = True
                 tag_text = ""
 
             elif tag_state.name == "lb":
@@ -878,11 +874,9 @@ def format_text_block(
                 tag_text = "`"
                 if tag_state.closing:
                     tag_depth -= 1
-                    escape_post = True
                 else:
                     tag_text = ":kbd:" + tag_text
                     tag_depth += 1
-                    escape_pre = True
 
             # Invalid syntax.
             else:
@@ -900,8 +894,6 @@ def format_text_block(
                     )
 
                     tag_text = f"``{tag_text}``"
-                    escape_pre = True
-                    escape_post = True
 
         next_brac_pos = post_text.find("[", 0)
         iter_pos = 0
@@ -909,7 +901,7 @@ def format_text_block(
             iter_pos = post_text.find("*", iter_pos, next_brac_pos)
             if iter_pos == -1:
                 break
-            post_text = f"{post_text[:iter_pos]}\\*{post_text[iter_pos + 1 :]}"
+            post_text = f"{post_text[:iter_pos]}\\*{post_text[iter_pos + 1:]}"
             iter_pos += 2
 
         iter_pos = 0
@@ -918,7 +910,7 @@ def format_text_block(
             if iter_pos == -1:
                 break
             if not post_text[iter_pos + 1].isalnum():  # don't escape within a snake_case word
-                post_text = f"{post_text[:iter_pos]}\\_{post_text[iter_pos + 1 :]}"
+                post_text = f"{post_text[:iter_pos]}\\_{post_text[iter_pos + 1:]}"
                 iter_pos += 2
             else:
                 iter_pos += 1

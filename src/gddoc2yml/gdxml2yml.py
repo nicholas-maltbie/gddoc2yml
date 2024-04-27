@@ -89,8 +89,7 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
         "type": "Class",
     }
 
-    ### INHERITANCE TREE ###
-    
+    # INHERITANCE TREE
     # Ascendants
     if class_def.inherits:
         inherits = class_def.inherits.strip()
@@ -113,10 +112,10 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
     if len(inherited):
         class_yml["derivedClasses"] = inherited
 
-    ### INTRODUCTION ###
-
+    # INTRODUCTION
     # Brief description
-    # See Summary tag definition - https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags#summary
+    # See Summary tag definition -
+    #  https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags#summary
     if class_def.brief_description is not None and class_def.brief_description.strip() != "":
         class_yml["summary"] = format_text_block(
             class_def.brief_description.strip(),
@@ -124,7 +123,8 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
             state)
 
     # Class description
-    # See Remarks tag definition - https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags#remarks
+    # See Remarks tag definition -
+    #  https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags#remarks
     if class_def.description is not None and class_def.description.strip() != "":
         class_yml["remarks"] = format_text_block(
             class_def.description.strip(),
