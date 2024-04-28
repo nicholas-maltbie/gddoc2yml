@@ -26,7 +26,7 @@ import xml.etree.ElementTree as ET
 import yaml
 
 from .make_rst import State, ClassDef, print_error
-from .gdxml_helpers import format_text_block
+from .gdxml_helpers import format_text_block, make_link
 from typing import Dict, List, Tuple
 
 
@@ -78,6 +78,47 @@ def make_yml_class(class_def: ClassDef, state: State, output: str) -> str:
     return output_file
 
 
+def _get_class_descendants(class_name: str, state: State) -> List[str]:
+    """Gets the list of all classes that inherit a given class from a state."""
+    inherited: List[str] = []
+    for c in state.classes.values():
+        if c.inherits and c.inherits.strip() == class_name:
+            inherited.append(c.name)
+
+    return inherited
+
+
+def _get_class_inheritance(class_def: ClassDef, state: State) -> List[str]:
+    """Get the class inheritance in order for a given class and state."""
+    inherits = class_def.inherits.strip()
+    all_inherits = [inherits]
+    while inherits in state.classes:
+        inode = state.classes[inherits].inherits
+        if inode:
+            inherits = inode.strip()
+            all_inherits.append(inode)
+        else:
+            break
+    return all_inherits
+
+
+def _get_seealso_list(class_def: ClassDef) -> List[Dict]:
+    seealso: List[Dict] = []
+    for url, title in class_def.tutorials:
+        # see LinkInfo definition
+        # https://github.com/dotnet/docfx/blob/main/src/Docfx.DataContracts.UniversalReference/LinkInfo.cs
+        seealso.append(
+            {
+                "linkType": "HRef",
+                "linkId": make_link(url, ""),
+                "commentId": title,
+                "altText": title
+            }
+        )
+
+    return seealso
+
+
 def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
     class_yml = {
         "uid": class_name,
@@ -92,23 +133,10 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
     # INHERITANCE TREE
     # Ascendants
     if class_def.inherits:
-        inherits = class_def.inherits.strip()
-        all_inherits = [inherits]
-        while inherits in state.classes:
-            inode = state.classes[inherits].inherits
-            if inode:
-                inherits = inode.strip()
-                all_inherits.append(inode)
-            else:
-                break
-        class_yml["inheritance"] = all_inherits
+        class_yml["inheritance"] = _get_class_inheritance(class_def, state)
 
     # Descendants
-    inherited: List[str] = []
-    for c in state.classes.values():
-        if c.inherits and c.inherits.strip() == class_name:
-            inherited.append(c.name)
-
+    inherited: List[str] = _get_class_descendants(class_name, state)
     if len(inherited):
         class_yml["derivedClasses"] = inherited
 
@@ -130,6 +158,11 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
             class_def.description.strip(),
             class_def,
             state)
+
+    # Online tutorials (implemented via seealso)
+    #  https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags#seealso
+    if len(class_def.tutorials) > 0:
+        class_yml["seealso"] = _get_seealso_list(class_def)
 
     items = [class_yml]
     return yaml.dump({"items": items}, default_flow_style=False, sort_keys=False)
