@@ -340,7 +340,7 @@ def sanitize_operator_name(dirty_name: str, state: State) -> str:
     return clear_name
 
 
-def format_text_block(
+def format_text_block(  # noqa: C901 # TODO: Unwrap and fix this function!
     text: str,
     context: DefinitionBase,
     state: State,
