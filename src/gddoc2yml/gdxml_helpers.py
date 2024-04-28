@@ -24,6 +24,8 @@ from .make_rst import State, DefinitionBase, TagState, MethodDef, \
     MARKUP_ALLOWED_PRECEDENT, MARKUP_ALLOWED_SUBSEQUENT
 from typing import List, Dict, TextIO, Tuple, Optional, Union
 
+GODOT_DOC_URL = "https://docs.godotengine.org/en/stable/"
+
 STYLES: Dict[str, str] = {}
 STYLES["red"] = "\x1b[91m"
 STYLES["green"] = "\x1b[92m"
@@ -43,6 +45,19 @@ def print_warning(warning: str, state: State) -> None:
     state.num_warnings += 1
 
 
+def format_doc_url(url: str) -> str:
+    """Replace godot doc pattern with godot doc url"""
+    match = GODOT_DOCS_PATTERN.search(url)
+    if match:
+        groups = match.groups()
+        if match.lastindex == 2:
+            return f"{GODOT_DOC_URL}/{groups[0]}.html{groups[1]}"
+        if match.lastindex == 1:
+            return f"{GODOT_DOC_URL}/{groups[0]}.html"
+
+    return url
+
+
 def make_link(url: str, title: str) -> str:
     match = GODOT_DOCS_PATTERN.search(url)
     if match:
@@ -52,20 +67,20 @@ def make_link(url: str, title: str) -> str:
             # `#calling-javascript-from-script in Exporting For Web`
             # Or use the title if provided.
             if title != "":
-                return f"`{title} <../{groups[0]}.html{groups[1]}>`__"
-            return f"`{groups[1]} <../{groups[0]}.html{groups[1]}>`__ in :doc:`../{groups[0]}`"
+                return f"[{title}]({GODOT_DOC_URL}/{groups[0]}.html{groups[1]})"
+            return f"{GODOT_DOC_URL}/{groups[0]}.html{groups[1]}"
         elif match.lastindex == 1:
             # Doc reference, for example:
             # `Math`
             if title != "":
-                return f":doc:`{title} <../{groups[0]}>`"
-            return f":doc:`../{groups[0]}`"
+                return f"[{title}]({GODOT_DOC_URL}/{groups[0]}.html)"
+            return f"{GODOT_DOC_URL}/{groups[0]}.html{groups[1]}"
 
     # External link, for example:
     # `http://enet.bespin.org/usergroup0.html`
     if title != "":
-        return f"`{title} <{url}>`__"
-    return f"`{url} <{url}>`__"
+        return f"[{title}]({url})"
+    return f"{url}"
 
 
 def make_enum(t: str, is_bitfield: bool, state: State) -> str:
