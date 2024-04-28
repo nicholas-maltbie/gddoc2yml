@@ -2,7 +2,9 @@
     "build": {
       "dest": "_site",
       "template": [
-        "default"
+        "default",
+        "modern",
+        "my-template"
       ],
       "globalMetadata": {
         "_appTitle": "Godot Documentation",

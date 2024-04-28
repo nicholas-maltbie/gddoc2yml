@@ -247,8 +247,16 @@ def format_codeblock(
 
     # Remove extra indentation
     code_text = code_text.replace("\n    ", "\n")
+
+    # Get language name for syntax highlighting
+    lang_name = tag_state.name
+
+    # Assume default language of gdscript unless otherwise specified
+    if lang_name == "codeblock":
+        lang_name = "gdscript"
+
     return (
-        f"\n[{opening_formatted}]```{tag_state.name}{code_text}```{post_text}",
+        f"\n[{opening_formatted}]```{lang_name}{code_text}```{post_text}",
         len(f"\n[{opening_formatted}]{code_text}"))
 
 
@@ -504,7 +512,7 @@ def format_text_block(
                     if "lang=text" in tag_state.arguments.split(" "):
                         tag_text = "\n# [text](#tab/text)\n"
                     else:
-                        tag_text = "\n::\n"
+                        tag_text = ""
 
                 inside_code = True
                 inside_code_tag = tag_state.name
