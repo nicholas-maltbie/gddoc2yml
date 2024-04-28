@@ -49,5 +49,5 @@ jobs:
     - name: Test Build Site
       run: |
         python3 -m pip install .
-        gdxml2yml godot/doc/classes doc/api
+        gdxml2yml godot/doc/classes godot/modules doc/api
         dotnet tool run docfx doc/docfx.json

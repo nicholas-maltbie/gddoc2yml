@@ -9,6 +9,8 @@ to yml compatible with docfx.
 * [Godot -- make_rst.py](https://github.com/godotengine/godot/blob/master/doc/tools/make_rst.py)
 * [DocFx -- Github](https://github.com/dotnet/docfx)
 * [DocFx -- Introduction to Multiple Languages Support](https://xxred.gitee.io/docfx/tutorial/universalreference/intro_multiple_langs_support.html)
+* [DocFx -- PageViewModel.cs](https://github.com/dotnet/docfx/blob/main/src/Docfx.DataContracts.UniversalReference/PageViewModel.cs)
+* [DocFx -- Recommended XML tags for C#](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags)
 
 ## Setup
 
@@ -31,7 +33,7 @@ Lint using [flake8](https://github.com/pycqa/flake8/) tool.
 ```bash
 # Run flake8 from .flake8 config file
 # Install via python3 -m pip install flake8
-flake8 .
+python3 -m flake8 .
 ```
 
 ## Tests
@@ -64,7 +66,7 @@ Build godot docs using latest gddoc2yml.
 python3 -m pip install .
 
 # Generate docs using gdxml2yml
-gdxml2yml godot/doc/classes doc/api
+gdxml2yml godot/doc/classes godot/modules doc/api
 
 # Startup docfx website
 dotnet tool run docfx --serve doc/docfx.json

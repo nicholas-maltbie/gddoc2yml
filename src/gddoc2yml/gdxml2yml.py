@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 import yaml
 
 from .make_rst import State, ClassDef, print_error
+from .gdxml_helpers import format_text_block
 from typing import Dict, List, Tuple
 
 
@@ -88,6 +89,8 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
         "type": "Class",
     }
 
+    # INHERITANCE TREE
+    # Ascendants
     if class_def.inherits:
         inherits = class_def.inherits.strip()
         all_inherits = [inherits]
@@ -99,6 +102,34 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
             else:
                 break
         class_yml["inheritance"] = all_inherits
+
+    # Descendants
+    inherited: List[str] = []
+    for c in state.classes.values():
+        if c.inherits and c.inherits.strip() == class_name:
+            inherited.append(c.name)
+
+    if len(inherited):
+        class_yml["derivedClasses"] = inherited
+
+    # INTRODUCTION
+    # Brief description
+    # See Summary tag definition -
+    #  https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags#summary
+    if class_def.brief_description is not None and class_def.brief_description.strip() != "":
+        class_yml["summary"] = format_text_block(
+            class_def.brief_description.strip(),
+            class_def,
+            state)
+
+    # Class description
+    # See Remarks tag definition -
+    #  https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/recommended-tags#remarks
+    if class_def.description is not None and class_def.description.strip() != "":
+        class_yml["remarks"] = format_text_block(
+            class_def.description.strip(),
+            class_def,
+            state)
 
     items = [class_yml]
     return yaml.dump({"items": items}, default_flow_style=False, sort_keys=False)
