@@ -255,8 +255,7 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
 
             signals.append(signal_yml)
 
-    properties = []
-    children = signals + properties
+    children = signals
 
     if len(children):
         class_yml["children"] = [child["uid"] for child in children]
