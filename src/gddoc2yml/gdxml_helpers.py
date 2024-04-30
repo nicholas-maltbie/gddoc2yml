@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 from .make_rst import State, DefinitionBase, TagState, MethodDef, \
-    SignalDef, AnnotationDef, ParameterDef, ClassDef, \
+    SignalDef, AnnotationDef, ParameterDef, \
     RESERVED_CODEBLOCK_TAGS, RESERVED_CROSSLINK_TAGS, GODOT_DOCS_PATTERN, \
     MARKUP_ALLOWED_PRECEDENT, MARKUP_ALLOWED_SUBSEQUENT
 from typing import List, Dict, TextIO, Tuple, Optional, Union

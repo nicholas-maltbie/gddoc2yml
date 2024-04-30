@@ -26,8 +26,7 @@ import xml.etree.ElementTree as ET
 import yaml
 
 from .make_rst import State, ClassDef, EnumDef, print_error
-from .gdxml_helpers import format_text_block, make_link, make_method_signature, \
-    get_method_return_type
+from .gdxml_helpers import format_text_block, make_link, make_method_signature
 from typing import Dict, List, Tuple
 
 
@@ -71,6 +70,7 @@ def make_yml_enum(class_name: str, enum_def: EnumDef, state: State, output: str)
         file.write(_get_enum_yml(class_name, enum_name, enum_def, state))
 
     return output_file
+
 
 def make_yml_class(class_def: ClassDef, state: State, output: str) -> str:
     class_name = class_def.name
@@ -165,6 +165,7 @@ def _get_enum_yml(class_name: str, enum_name: str, enum_def: EnumDef, state: Sta
     items = [enum_yml] + children
     return yaml.dump({"items": items}, default_flow_style=False, sort_keys=False)
 
+
 def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
     class_yml = {
         "uid": class_name,
@@ -224,7 +225,7 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
             full_name = f"{class_name}.{signature_short}"
             signal_yml = {
                 "uid": full_name,
-                "commentId": f"E:" + full_name,
+                "commentId": f"E:{full_name}",
                 "id": signature_short,
                 "langs": ["gdscript", "csharp"],
                 "name": signature_spaces,
@@ -340,13 +341,10 @@ def main() -> None:
 
         enum_toc_yml = []
         for enum_name, enum_def in class_def.enums.items():
-            enum_file_path = make_yml_enum(class_name, enum_def, state, args.output)
-            enum_toc_yml.append(
-            {
-                "uid": f"{class_name}.{enum_name}",
-                "name": enum_name
-            })
-        
+            make_yml_enum(class_name, enum_def, state, args.output)
+            ref_yml = {"uid": f"{class_name}.{enum_name}", "name": enum_name}
+            enum_toc_yml.append(ref_yml)
+
         if len(enum_toc_yml):
             toc_yml["items"] = enum_toc_yml
 
