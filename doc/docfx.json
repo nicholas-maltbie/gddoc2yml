@@ -4,7 +4,7 @@
       "template": [
         "default",
         "modern",
-        "my-template"
+        "godot-template"
       ],
       "globalMetadata": {
         "_appTitle": "Godot Documentation",
