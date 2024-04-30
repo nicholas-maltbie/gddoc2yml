@@ -963,6 +963,8 @@ def make_method_signature(
         for parameter in definition.parameters]
 
     sep = ", " if spaces else ","
-    out = f"{definition.name}({sep.join(params + (["..."] if varargs else []))})"
+    if varargs:
+        params += ["..."]
+    out = f"{definition.name}({sep.join(params)})"
 
     return out
