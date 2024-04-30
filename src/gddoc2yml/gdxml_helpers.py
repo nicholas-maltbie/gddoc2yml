@@ -45,19 +45,6 @@ def print_warning(warning: str, state: State) -> None:
     state.num_warnings += 1
 
 
-def format_doc_url(url: str) -> str:
-    """Replace godot doc pattern with godot doc url"""
-    match = GODOT_DOCS_PATTERN.search(url)
-    if match:
-        groups = match.groups()
-        if match.lastindex == 2:
-            return f"{GODOT_DOC_URL}/{groups[0]}.html{groups[1]}"
-        if match.lastindex == 1:
-            return f"{GODOT_DOC_URL}/{groups[0]}.html"
-
-    return url
-
-
 def make_link(url: str, title: str) -> str:
     match = GODOT_DOCS_PATTERN.search(url)
     if match:
@@ -896,9 +883,10 @@ def format_text_block(  # noqa: C901 # TODO: Unwrap and fix this function!
             elif tag_state.name == "kbd":
                 tag_text = "`"
                 if tag_state.closing:
+                    tag_text = tag_text + "</kbd>"
                     tag_depth -= 1
                 else:
-                    tag_text = ":kbd:" + tag_text
+                    tag_text = "<kbd>" + tag_text
                     tag_depth += 1
 
             # Invalid syntax.
@@ -948,3 +936,35 @@ def format_text_block(  # noqa: C901 # TODO: Unwrap and fix this function!
         )
 
     return text
+
+
+def get_method_return_type(definition: Union[AnnotationDef, MethodDef, SignalDef]) -> str:
+    ret_type = ""
+
+    if isinstance(definition, MethodDef):
+        ret_type = definition.return_type.type_name
+
+    return ret_type
+
+
+def make_method_signature(
+    definition: Union[AnnotationDef, MethodDef, SignalDef],
+    spaces: bool,
+    named_params: bool,
+) -> str:
+    qualifiers = None
+    if isinstance(definition, (MethodDef, AnnotationDef)):
+        qualifiers = definition.qualifiers
+
+    varargs = qualifiers is not None and "vararg" in qualifiers
+    params = [
+        f"{parameter.type_name.type_name} {parameter.name}"
+        if named_params else parameter.type_name.type_name
+        for parameter in definition.parameters]
+
+    sep = ", " if spaces else ","
+    if varargs:
+        params += ["..."]
+    out = f"{definition.name}({sep.join(params)})"
+
+    return out
