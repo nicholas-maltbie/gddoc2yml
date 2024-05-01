@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 from .make_rst import State, DefinitionBase, TagState, MethodDef, \
-    SignalDef, AnnotationDef, ParameterDef, \
+    SignalDef, AnnotationDef, ParameterDef, ClassDef, PropertyDef, TypeName, \
     RESERVED_CODEBLOCK_TAGS, RESERVED_CROSSLINK_TAGS, GODOT_DOCS_PATTERN, \
     MARKUP_ALLOWED_PRECEDENT, MARKUP_ALLOWED_SUBSEQUENT
 from typing import List, Dict, TextIO, Tuple, Optional, Union
@@ -113,6 +113,21 @@ def make_type(klass: str, state: State) -> str:
     type_xref = f"``{link_type}``"
     return type_xref
 
+
+def full_type_name(type_name: str, state: State) -> str:
+    if type_name in state.classes:
+        return type_name
+
+    for enum_name, _ in state.classes[state.current_class].enums.items():
+        if enum_name == type_name:
+            return f"{class_name}.{enum_name}"
+
+    for class_name, class_def in state.classes.items():
+        for enum_name, _ in class_def.enums.items():
+            if enum_name == type_name:
+                return f"{class_name}.{enum_name}"
+
+    return type_name
 
 def is_in_tagset(tag_text: str, tagset: List[str]) -> bool:
     for tag in tagset:
@@ -962,9 +977,46 @@ def make_method_signature(
         if named_params else parameter.type_name.type_name
         for parameter in definition.parameters]
 
+    out = definition.name
     sep = ", " if spaces else ","
     if varargs:
         params += ["..."]
-    out = f"{definition.name}({sep.join(params)})"
+
+    if len(params):
+        out += f"({sep.join(params)})"
 
     return out
+
+
+def make_setter_signature(class_def: ClassDef, property_def: PropertyDef, state: State) -> str:
+    if property_def.setter is None:
+        return ""
+
+    # If setter is a method available as a method definition, we use that.
+    if property_def.setter in class_def.methods:
+        setter = class_def.methods[property_def.setter][0]
+    # Otherwise we fake it with the information we have available.
+    else:
+        setter_params: List[ParameterDef] = []
+        setter_params.append(ParameterDef("value", property_def.type_name, None))
+        setter = MethodDef(property_def.setter, TypeName("void"), setter_params, None, None)
+
+    ret_type, signature = make_method_signature(class_def, setter, "", state)
+    return f"{ret_type} {signature}"
+
+
+def make_getter_signature(class_def: ClassDef, property_def: PropertyDef, state: State) -> str:
+    if property_def.getter is None:
+        return ""
+
+    # If getter is a method available as a method definition, we use that.
+    if property_def.getter in class_def.methods:
+        getter = class_def.methods[property_def.getter][0]
+    # Otherwise we fake it with the information we have available.
+    else:
+        getter_params: List[ParameterDef] = []
+        getter = MethodDef(property_def.getter, property_def.type_name, getter_params, None, None)
+
+    ret_type, signature = make_method_signature(class_def, getter, "", state)
+    return f"{ret_type} {signature}"
+

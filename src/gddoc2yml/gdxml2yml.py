@@ -25,8 +25,9 @@ import re
 import xml.etree.ElementTree as ET
 import yaml
 
-from .make_rst import State, ClassDef, EnumDef, print_error
-from .gdxml_helpers import format_text_block, make_link, make_method_signature
+from .make_rst import State, ClassDef, EnumDef, TypeName, print_error
+from .gdxml_helpers import format_text_block, make_link, make_method_signature, \
+    full_type_name, make_setter_signature, make_getter_signature
 from typing import Dict, List, Tuple
 
 
@@ -156,7 +157,7 @@ def _get_enum_yml(class_name: str, enum_name: str, enum_def: EnumDef, state: Sta
             "syntax":
             {
                 "content": f"{value_name} = {value_def.value}",
-                "return": {"type": value_id}
+                "return": {"type": full_type_name(value_id, state)}
             }
         }
         children.append(value_yml)
@@ -164,6 +165,14 @@ def _get_enum_yml(class_name: str, enum_name: str, enum_def: EnumDef, state: Sta
     enum_yml["children"] = [value["uid"] for value in children]
     items = [enum_yml] + children
     return yaml.dump({"items": items}, default_flow_style=False, sort_keys=False)
+
+
+def _make_reference_yml(type_def: TypeName, state: State):
+    full_name = full_type_name(type_def.type_name, state)
+    return {
+        "uid": full_name,
+        "name": full_name,
+    }
 
 
 def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
@@ -217,46 +226,144 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
 
     # Signal descriptions
     signals = []
-    if len(class_def.signals) > 0:
-        for signal in class_def.signals.values():
-            signature_short = make_method_signature(signal, False, False)
-            signature_spaces = make_method_signature(signal, True, False)
-            signature_spaces_named = make_method_signature(signal, True, True)
+    for signal in class_def.signals.values():
+        signature_short = make_method_signature(signal, False, False)
+        signature_spaces = make_method_signature(signal, True, False)
+        signature_spaces_named = make_method_signature(signal, True, True)
+        full_name = f"{class_name}.{signature_short}"
+        signal_yml = {
+            "uid": full_name,
+            "commentId": f"E:{full_name}",
+            "id": signature_short,
+            "langs": ["gdscript", "csharp"],
+            "name": signature_spaces,
+            "nameWithType": f"{class_name}.{signature_spaces}",
+            "type": "Event",
+            "syntax": {
+                "content": f"signal {signature_spaces_named}",
+                "parameters": [
+                    {
+                        "id": parameter.name,
+                        "type": parameter.type_name.type_name,
+                    }
+                    for parameter in signal.parameters
+                ],
+            },
+            "summary": format_text_block(signal.description.strip(), signal, state),
+            "parent": class_name,
+        }
+
+        # add all types of parameter as references
+        for parameter in signal.parameters:
+            references[parameter.type_name.type_name] = _make_reference_yml(parameter.type_name, state)
+
+        signals.append(signal_yml)
+
+    # Constant descriptions
+    constants = []
+    for constant in class_def.constants.values():
+        constant_id = f"{class_name}.{constant.name}"
+        constant_yml = {
+            "uid": constant_id,
+            "commentId": f"F:{constant_id}",
+            "id": constant.name,
+            "langs": ["gdscript", "csharp"],
+            "name": constant.name,
+            "nameWithType": constant_id,
+            "type": "Field",
+            "summary": format_text_block(constant.text, class_def, state),
+            "syntax":
+            {
+                "content": f"const {constant.name} = {constant.value}",
+            },
+            "parent": class_name,
+        }
+        constants.append(constant_yml)
+
+    # Annotation descriptions
+    annotations = []
+    for method_list in class_def.annotations.values():
+        for _, m in enumerate(method_list):
+            signature_short = make_method_signature(m, False, False)
+            signature_spaces = make_method_signature(m, True, False)
+            signature_spaces_named = make_method_signature(m, True, True)
             full_name = f"{class_name}.{signature_short}"
-            signal_yml = {
+            annotation_yml = {
                 "uid": full_name,
                 "commentId": f"E:{full_name}",
                 "id": signature_short,
                 "langs": ["gdscript", "csharp"],
                 "name": signature_spaces,
                 "nameWithType": f"{class_name}.{signature_spaces}",
-                "type": "Event",
+                "type": "Property",
                 "syntax": {
-                    "content": f"signal {signature_spaces_named}",
+                    "content": f"{signature_spaces_named}",
                     "parameters": [
                         {
                             "id": parameter.name,
                             "type": parameter.type_name.type_name,
                         }
-                        for parameter in signal.parameters
+                        for parameter in m.parameters
                     ],
                 },
-                "summary": format_text_block(signal.description.strip(), signal, state),
+                "summary": format_text_block(m.description.strip(), m, state),
                 "parent": class_name,
             }
 
             # add all types of parameter as references
-            for parameter in signal.parameters:
-                references[parameter.type_name.type_name] = \
-                    {
-                        "uid": parameter.type_name.type_name,
-                        "name": parameter.type_name.type_name,
-                    }
+            for parameter in m.parameters:
+                references[parameter.type_name.type_name] = _make_reference_yml(parameter.type_name, state)
 
-            signals.append(signal_yml)
+            annotations.append(annotation_yml)
 
-    children = signals
 
+    # Property descriptions
+    properties = []
+    if any(not p.overrides for p in class_def.properties.values()) > 0:
+        for property_def in class_def.properties.values():
+            if property_def.overrides:
+                continue
+
+            property_id = f"{class_name}.{property_def.name}"
+            syntax = f"var {property_def.name} : {property_def.type_name.type_name} = {property_def.default_value}"
+            if len(property_def.type_name.type_name):
+                syntax = f"var {property_def.name} : {property_def.type_name.type_name} = {property_def.default_value}"
+
+            property_yml = {
+                "uid": property_id,
+                "commentId": f"P:{property_id}",
+                "id": property_def.name,
+                "langs": ["gdscript", "csharp"],
+                "name": property_def.name,
+                "nameWithType": property_id,
+                "type": "Property",
+                "summary": format_text_block(property_def.text.strip(), property_def, state),
+                "syntax":
+                {
+                    "content": syntax,
+                    "return": {"type": full_type_name(property_def.type_name.type_name, state)}
+                },
+                "parent": class_name,
+            }
+
+            # Create property setter and getter records.
+
+            property_setget = ""
+
+            if property_def.setter is not None and not property_def.setter.startswith("_"):
+                property_setter = make_setter_signature(class_def, property_def, state)
+                property_setget += f"- {property_setter}\n"
+
+            if property_def.getter is not None and not property_def.getter.startswith("_"):
+                property_getter = make_getter_signature(class_def, property_def, state)
+                property_setget += f"- {property_getter}\n"
+
+            if property_setget != "":
+                property_yml["remarks"] = property_setget
+
+            references[property_def.type_name.type_name] = _make_reference_yml(property_def.type_name, state)
+
+    children = signals + constants + annotations + properties
     if len(children):
         class_yml["children"] = [child["uid"] for child in children]
 
