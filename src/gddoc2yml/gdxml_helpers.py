@@ -154,7 +154,7 @@ def full_type_name(type_name: str, state: State) -> str:
 
     for enum_name, _ in state.classes[state.current_class].enums.items():
         if enum_name == type_name:
-            return f"{class_name}.{enum_name}"
+            return f"{state.current_class}.{enum_name}"
 
     for class_name, class_def in state.classes.items():
         for enum_name, _ in class_def.enums.items():
@@ -162,6 +162,7 @@ def full_type_name(type_name: str, state: State) -> str:
                 return f"{class_name}.{enum_name}"
 
     return type_name
+
 
 def is_in_tagset(tag_text: str, tagset: List[str]) -> bool:
     for tag in tagset:
@@ -1049,6 +1050,7 @@ def get_qualifier_tooltip(qualifier: str):
     elif qualifier == "void":
         return void_msg
 
+
 def make_setter_signature(class_def: ClassDef, property_def: PropertyDef, state: State) -> str:
     if property_def.setter is None:
         return ""
@@ -1082,4 +1084,3 @@ def make_getter_signature(class_def: ClassDef, property_def: PropertyDef, state:
     ret_type = make_type(get_method_return_type(getter), state)
     signature = make_method_signature(getter, True, True, True, state, False)
     return f"{ret_type} {signature}"
-

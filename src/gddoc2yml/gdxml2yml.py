@@ -25,7 +25,8 @@ import re
 import xml.etree.ElementTree as ET
 import yaml
 
-from .make_rst import AnnotationDef, MethodDef, SignalDef, State, ClassDef, EnumDef, TypeName, print_error
+from .make_rst import AnnotationDef, MethodDef, SignalDef, State, PropertyDef, \
+    ClassDef, EnumDef, TypeName, print_error
 from .gdxml_helpers import format_text_block, make_link, make_method_signature, \
     full_type_name, make_setter_signature, make_getter_signature, get_method_qualifiers, get_method_return_type
 from typing import Dict, List, Tuple, Union
@@ -179,7 +180,7 @@ def _get_method_yml(
         class_name: str,
         method_def: Union[AnnotationDef, MethodDef, SignalDef],
         state: State, method_type: str
-    ) -> Tuple[Dict[str, Dict], Dict]:
+) -> Tuple[Dict[str, Dict], Dict]:
     references = {}
     signature_short = make_method_signature(method_def, False, False, False, state, True)
     signature_spaces = make_method_signature(method_def, True, False, False, state, False)
@@ -225,7 +226,48 @@ def _get_method_yml(
     return references, method_yml
 
 
-def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
+def get_property_yml(class_name: str, property_def: PropertyDef, state: State, class_def: ClassDef):
+    property_id = f"{class_name}.{property_def.name}"
+    syntax = f"var {property_def.name}"
+    if len(property_def.type_name.type_name):
+        syntax += f" : {property_def.type_name.type_name}"
+    if property_def.default_value:
+        syntax += f" = {property_def.default_value.replace("`", "")}"
+
+    property_yml = {
+        "uid": property_id,
+        "commentId": f"P:{property_id}",
+        "id": property_def.name,
+        "langs": ["gdscript", "csharp"],
+        "name": property_def.name,
+        "nameWithType": property_id,
+        "type": "Property",
+        "summary": format_text_block(property_def.text.strip(), property_def, state),
+        "syntax":
+        {
+            "content": syntax,
+            "return": {"type": full_type_name(property_def.type_name.type_name, state)}
+        },
+        "parent": class_name,
+    }
+
+    # Create property setter and getter records.
+    property_setget = ""
+
+    if property_def.setter is not None and not property_def.setter.startswith("_"):
+        property_setter = make_setter_signature(class_def, property_def, state)
+        property_setget += f"- {property_setter}\n"
+
+    if property_def.getter is not None and not property_def.getter.startswith("_"):
+        property_getter = make_getter_signature(class_def, property_def, state)
+        property_setget += f"- {property_getter}\n"
+
+    if property_setget != "":
+        property_yml["remarks"] = property_setget
+
+
+def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
+        class_name: str, class_def: ClassDef, state: State) -> str:
     class_yml = {
         "uid": class_name,
         "commentId": "T:" + class_name,
@@ -340,52 +382,13 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
             references.update(annotation_ref)
             annotations.append(annotation_yml)
 
-
     # Property descriptions
     properties = []
     if any(not p.overrides for p in class_def.properties.values()) > 0:
         for property_def in class_def.properties.values():
             if property_def.overrides:
                 continue
-
-            property_id = f"{class_name}.{property_def.name}"
-            syntax = f"var {property_def.name}"
-            if len(property_def.type_name.type_name):
-                syntax += f" : {property_def.type_name.type_name}"
-            if property_def.default_value:
-                syntax += f" = {property_def.default_value.replace("`", "")}"
-
-            property_yml = {
-                "uid": property_id,
-                "commentId": f"P:{property_id}",
-                "id": property_def.name,
-                "langs": ["gdscript", "csharp"],
-                "name": property_def.name,
-                "nameWithType": property_id,
-                "type": "Property",
-                "summary": format_text_block(property_def.text.strip(), property_def, state),
-                "syntax":
-                {
-                    "content": syntax,
-                    "return": {"type": full_type_name(property_def.type_name.type_name, state)}
-                },
-                "parent": class_name,
-            }
-
-            # Create property setter and getter records.
-            property_setget = ""
-
-            if property_def.setter is not None and not property_def.setter.startswith("_"):
-                property_setter = make_setter_signature(class_def, property_def, state)
-                property_setget += f"- {property_setter}\n"
-
-            if property_def.getter is not None and not property_def.getter.startswith("_"):
-                property_getter = make_getter_signature(class_def, property_def, state)
-                property_setget += f"- {property_getter}\n"
-
-            if property_setget != "":
-                property_yml["remarks"] = property_setget
-
+            property_yml = get_property_yml(class_name, property_def, state, class_def)
             properties.append(property_yml)
             references[property_def.type_name.type_name] = _make_reference_yml(property_def.type_name, state)
 
