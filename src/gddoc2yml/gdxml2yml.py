@@ -266,6 +266,8 @@ def get_property_yml(class_name: str, property_def: PropertyDef, state: State, c
     if property_setget != "":
         property_yml["remarks"] = property_setget
 
+    return property_yml
+
 
 def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
         class_name: str, class_def: ClassDef, state: State) -> str:
