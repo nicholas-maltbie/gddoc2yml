@@ -25,9 +25,11 @@ import re
 import xml.etree.ElementTree as ET
 import yaml
 
-from .make_rst import State, ClassDef, EnumDef, print_error
-from .gdxml_helpers import format_text_block, make_link, make_method_signature
-from typing import Dict, List, Tuple
+from .make_rst import AnnotationDef, MethodDef, SignalDef, State, PropertyDef, \
+    ClassDef, EnumDef, TypeName, print_error
+from .gdxml_helpers import format_text_block, make_link, make_method_signature, \
+    full_type_name, make_setter_signature, make_getter_signature, get_method_qualifiers, get_method_return_type
+from typing import Dict, List, Tuple, Union
 
 
 yml_mime_managed_reference_prefix = "### YamlMime:ManagedReference"
@@ -156,7 +158,7 @@ def _get_enum_yml(class_name: str, enum_name: str, enum_def: EnumDef, state: Sta
             "syntax":
             {
                 "content": f"{value_name} = {value_def.value}",
-                "return": {"type": value_id}
+                "return": {"type": full_type_name(value_id, state)}
             }
         }
         children.append(value_yml)
@@ -166,7 +168,109 @@ def _get_enum_yml(class_name: str, enum_name: str, enum_def: EnumDef, state: Sta
     return yaml.dump({"items": items}, default_flow_style=False, sort_keys=False)
 
 
-def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
+def _make_reference_yml(type_def: TypeName, state: State):
+    full_name = full_type_name(type_def.type_name, state)
+    return {
+        "uid": full_name,
+        "name": full_name,
+    }
+
+
+def _get_method_yml(
+        class_name: str,
+        method_def: Union[AnnotationDef, MethodDef, SignalDef],
+        state: State, method_type: str
+) -> Tuple[Dict[str, Dict], Dict]:
+    references = {}
+    signature_short = make_method_signature(method_def, False, False, False, state, True)
+    signature_spaces = make_method_signature(method_def, True, False, False, state, False)
+    signature_spaces_named = make_method_signature(method_def, True, True, False, state, False)
+    full_name = f"{class_name}.{signature_short}"
+
+    summary = ""
+    if method_def.qualifiers:
+        summary += f"Qualifiers: {get_method_qualifiers(method_def)}\n\n"
+    summary += format_text_block(method_def.description.strip(), method_def, state)
+
+    syntax = f"{signature_spaces_named}"
+    ret_type = get_method_return_type(method_def)
+    if ret_type:
+        syntax = ret_type + " " + syntax
+
+    method_yml = {
+        "uid": full_name,
+        "commentId": f"M:{full_name}",
+        "id": signature_short,
+        "langs": ["gdscript", "csharp"],
+        "name": signature_spaces,
+        "nameWithType": f"{class_name}.{signature_spaces}",
+        "type": method_type,
+        "syntax": {
+            "content": syntax,
+            "parameters": [
+                {
+                    "id": parameter.name,
+                    "type": parameter.type_name.type_name,
+                }
+                for parameter in method_def.parameters
+            ],
+        },
+        "summary": summary,
+        "parent": class_name,
+    }
+
+    # add all types of parameter as references
+    for parameter in method_def.parameters:
+        references[parameter.type_name.type_name] = _make_reference_yml(parameter.type_name, state)
+
+    return references, method_yml
+
+
+def get_property_yml(class_name: str, property_def: PropertyDef, state: State, class_def: ClassDef):
+    property_id = f"{class_name}.{property_def.name}"
+    syntax = f"var {property_def.name}"
+    if len(property_def.type_name.type_name):
+        syntax += f" : {property_def.type_name.type_name}"
+    if property_def.default_value:
+        backtick = "`"
+        syntax += " = " + property_def.default_value.replace(backtick, "")
+
+    property_yml = {
+        "uid": property_id,
+        "commentId": f"P:{property_id}",
+        "id": property_def.name,
+        "langs": ["gdscript", "csharp"],
+        "name": property_def.name,
+        "nameWithType": property_id,
+        "type": "Property",
+        "summary": format_text_block(property_def.text.strip(), property_def, state),
+        "syntax":
+        {
+            "content": syntax,
+            "return": {"type": full_type_name(property_def.type_name.type_name, state)}
+        },
+        "parent": class_name,
+    }
+
+    # Create property setter and getter records.
+    property_setget = ""
+
+    if property_def.setter is not None and not property_def.setter.startswith("_"):
+        property_setter = make_setter_signature(class_def, property_def, state)
+        property_setget += f"- {property_setter}\n"
+
+    if property_def.getter is not None and not property_def.getter.startswith("_"):
+        property_getter = make_getter_signature(class_def, property_def, state)
+        property_setget += f"- {property_getter}\n"
+
+    if property_setget != "":
+        property_yml["remarks"] = property_setget
+
+    return property_yml
+
+
+def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
+        class_name: str, class_def: ClassDef, state: State) -> str:
     class_yml = {
         "uid": class_name,
         "commentId": "T:" + class_name,
@@ -217,46 +321,130 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
 
     # Signal descriptions
     signals = []
-    if len(class_def.signals) > 0:
-        for signal in class_def.signals.values():
-            signature_short = make_method_signature(signal, False, False)
-            signature_spaces = make_method_signature(signal, True, False)
-            signature_spaces_named = make_method_signature(signal, True, True)
-            full_name = f"{class_name}.{signature_short}"
-            signal_yml = {
-                "uid": full_name,
-                "commentId": f"E:{full_name}",
-                "id": signature_short,
-                "langs": ["gdscript", "csharp"],
-                "name": signature_spaces,
-                "nameWithType": f"{class_name}.{signature_spaces}",
-                "type": "Event",
-                "syntax": {
-                    "content": f"signal {signature_spaces_named}",
-                    "parameters": [
-                        {
-                            "id": parameter.name,
-                            "type": parameter.type_name.type_name,
-                        }
-                        for parameter in signal.parameters
-                    ],
-                },
-                "summary": format_text_block(signal.description.strip(), signal, state),
-                "parent": class_name,
-            }
-
-            # add all types of parameter as references
-            for parameter in signal.parameters:
-                references[parameter.type_name.type_name] = \
+    for signal in class_def.signals.values():
+        signature_short = make_method_signature(signal, False, False, False, state, False)
+        signature_spaces = make_method_signature(signal, True, False, False, state, False)
+        signature_spaces_named = make_method_signature(signal, True, True, False, state, False)
+        full_name = f"{class_name}.{signature_short}"
+        signal_yml = {
+            "uid": full_name,
+            "commentId": f"E:{full_name}",
+            "id": signature_short,
+            "langs": ["gdscript", "csharp"],
+            "name": signature_spaces,
+            "nameWithType": f"{class_name}.{signature_spaces}",
+            "type": "Event",
+            "syntax": {
+                "content": f"signal {signature_spaces_named}",
+                "parameters": [
                     {
-                        "uid": parameter.type_name.type_name,
-                        "name": parameter.type_name.type_name,
+                        "id": parameter.name,
+                        "type": parameter.type_name.type_name,
                     }
+                    for parameter in signal.parameters
+                ],
+            },
+            "summary": format_text_block(signal.description.strip(), signal, state),
+            "parent": class_name,
+        }
 
-            signals.append(signal_yml)
+        # add all types of parameter as references
+        for parameter in signal.parameters:
+            references[parameter.type_name.type_name] = _make_reference_yml(parameter.type_name, state)
 
-    children = signals
+        signals.append(signal_yml)
 
+    # Constant descriptions
+    constants = []
+    for constant in class_def.constants.values():
+        constant_id = f"{class_name}.{constant.name}"
+        constant_yml = {
+            "uid": constant_id,
+            "commentId": f"F:{constant_id}",
+            "id": constant.name,
+            "langs": ["gdscript", "csharp"],
+            "name": constant.name,
+            "nameWithType": constant_id,
+            "type": "Field",
+            "summary": format_text_block(constant.text, class_def, state),
+            "syntax":
+            {
+                "content": f"const {constant.name} = {constant.value}",
+            },
+            "parent": class_name,
+        }
+        constants.append(constant_yml)
+
+    # Annotation descriptions
+    annotations = []
+    for method_list in class_def.annotations.values():
+        for _, m in enumerate(method_list):
+            signature_spaces_named = make_method_signature(m, True, True, False, state, False)
+            annotation_ref, annotation_yml = _get_method_yml(class_name, m, state, "Property")
+            annotation_yml["summary"] = "**Annotation**\n\n" + annotation_yml["summary"]
+            references.update(annotation_ref)
+            annotations.append(annotation_yml)
+
+    # Property descriptions
+    properties = []
+    if any(not p.overrides for p in class_def.properties.values()) > 0:
+        for property_def in class_def.properties.values():
+            if property_def.overrides:
+                continue
+            property_yml = get_property_yml(class_name, property_def, state, class_def)
+            properties.append(property_yml)
+            references[property_def.type_name.type_name] = _make_reference_yml(property_def.type_name, state)
+
+    # Constructor, Method, Operator descriptions
+    constructors = []
+    for method_list in class_def.constructors.values():
+        for _, m in enumerate(method_list):
+            constructor_ref, constructor_yml = _get_method_yml(class_name, m, state, "Constructor")
+            references.update(constructor_ref)
+            constructors.append(constructor_yml)
+
+    methods = []
+    for method_list in class_def.methods.values():
+        for _, m in enumerate(method_list):
+            method_ref, method_yml = _get_method_yml(class_name, m, state, "Method")
+            references.update(method_ref)
+            constructors.append(method_yml)
+
+    operators = []
+    for method_list in class_def.operators.values():
+        for _, m in enumerate(method_list):
+            operator_ref, operator_yml = _get_method_yml(class_name, m, state, "Operator")
+            references.update(operator_ref)
+            operators.append(operator_yml)
+
+    # Theme property descriptions
+    theme_properties = []
+    for theme_item_def in class_def.theme_items.values():
+        theme_item_id = f"{class_name}.{theme_item_def.name}"
+        syntax = f"{theme_item_def.type_name.type_name} {theme_item_def.name}"
+        if theme_item_def.default_value is not None:
+            syntax = f" = {theme_item_def.default_value}"
+        theme_yml = {
+            "uid": theme_item_id,
+            "commentId": f"P:{theme_item_id}",
+            "id": theme_item_def.name,
+            "langs": ["gdscript", "csharp"],
+            "name": theme_item_def.name,
+            "nameWithType": theme_item_id,
+            "type": "Property",
+            "summary": "**Theme Property**\n\n" + format_text_block(theme_item_def.text.strip(), theme_item_def, state),
+            "syntax":
+            {
+                "content": syntax,
+                "return": {"type": full_type_name(theme_item_def.type_name.type_name, state)}
+            },
+            "parent": class_name,
+        }
+
+        references[theme_item_def.type_name.type_name] = _make_reference_yml(theme_item_def.type_name, state)
+        theme_properties.append(theme_yml)
+
+    children = signals + constants + annotations + properties + constructors + methods + operators + theme_properties
     if len(children):
         class_yml["children"] = [child["uid"] for child in children]
 

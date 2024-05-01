@@ -63,7 +63,7 @@ jobs:
     - name: Build Site
       run: |
         python3 -m pip install .
-        gdxml2yml godot/doc/classes godot/modules doc/api
+        gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes godot/platform/ios/doc_classes godot/platform/linuxbsd/doc_classes platform/macos/doc_classes platform/web/doc_classes platform/windows/doc_classes doc/api
         dotnet tool run docfx doc/docfx.json
     - name: Fix permissions
       run: |

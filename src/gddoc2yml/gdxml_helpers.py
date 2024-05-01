@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 from .make_rst import State, DefinitionBase, TagState, MethodDef, \
-    SignalDef, AnnotationDef, ParameterDef, \
+    SignalDef, AnnotationDef, ParameterDef, ClassDef, PropertyDef, TypeName, \
     RESERVED_CODEBLOCK_TAGS, RESERVED_CROSSLINK_TAGS, GODOT_DOCS_PATTERN, \
     MARKUP_ALLOWED_PRECEDENT, MARKUP_ALLOWED_SUBSEQUENT
 from typing import List, Dict, TextIO, Tuple, Optional, Union
@@ -33,6 +33,30 @@ STYLES["yellow"] = "\x1b[93m"
 STYLES["bold"] = "\x1b[1m"
 STYLES["regular"] = "\x1b[22m"
 STYLES["reset"] = "\x1b[0m"
+
+operator_lookup = {
+    "!=": "neq",
+    "==": "eq",
+    "<": "lt",
+    "<=": "lte",
+    ">": "gt",
+    ">=": "gte",
+    "+": "sum",
+    "-": "dif",
+    "*": "mul",
+    "/": "div",
+    "%": "mod",
+    "**": "pow",
+    "unary+": "unplus",
+    "unary-": "unminus",
+    "<<": "bwsl",
+    ">>": "bwsr",
+    "&": "bwand",
+    "|": "bwor",
+    "^": "bwxor",
+    "~": "bwnot",
+    "[]": "idx",
+}
 
 
 def print_error(error: str, state: State) -> None:
@@ -105,13 +129,39 @@ def make_type(klass: str, state: State) -> str:
         return f"``{klass}``"
 
     link_type = klass
+    is_array = False
+    if link_type.endswith("[]"):  # Typed array, strip [] to link to contained type.
+        link_type = link_type[:-2]
+        is_array = True
+
     if link_type in state.classes:
-        type_xref = f"<xref href=\"{link_type}\" data-throw-if-not-resolved=\"false\"></xref>"
-        return type_xref
+        if is_array:
+            return f"<xref href=\"{link_type}\" data-throw-if-not-resolved=\"false\">{link_type}[]</xref>"
+        return f"<xref href=\"{link_type}\" data-throw-if-not-resolved=\"false\"></xref>"
+
+    if klass == "void":
+        return "void"
 
     print_error(f'{state.current_class}.xml: Unresolved type "{link_type}".', state)
-    type_xref = f"``{link_type}``"
-    return type_xref
+    if is_array:
+        return f"``{link_type}[]``"
+    return f"``{link_type}``"
+
+
+def full_type_name(type_name: str, state: State) -> str:
+    if type_name in state.classes:
+        return type_name
+
+    for enum_name, _ in state.classes[state.current_class].enums.items():
+        if enum_name == type_name:
+            return f"{state.current_class}.{enum_name}"
+
+    for class_name, class_def in state.classes.items():
+        for enum_name, _ in class_def.enums.items():
+            if enum_name == type_name:
+                return f"{class_name}.{enum_name}"
+
+    return type_name
 
 
 def is_in_tagset(tag_text: str, tagset: List[str]) -> bool:
@@ -309,32 +359,8 @@ def format_table(f: TextIO, data: List[Tuple[Optional[str], ...]], remove_empty_
 
 def sanitize_operator_name(dirty_name: str, state: State) -> str:
     clear_name = dirty_name.replace("operator ", "")
-    lookup = {
-        "!=": "neq",
-        "==": "eq",
-        "<": "lt",
-        "<=": "lte",
-        ">": "gt",
-        ">=": "gte",
-        "+": "sum",
-        "-": "dif",
-        "*": "mul",
-        "/": "div",
-        "%": "mod",
-        "**": "pow",
-        "unary+": "unplus",
-        "unary-": "unminus",
-        "<<": "bwsl",
-        ">>": "bwsr",
-        "&": "bwand",
-        "|": "bwor",
-        "^": "bwxor",
-        "~": "bwnot",
-        "[]": "idx",
-    }
-
-    if clear_name in lookup:
-        clear_name = lookup[clear_name]
+    if clear_name in operator_lookup:
+        clear_name = operator_lookup[clear_name]
     else:
         clear_name = "xxx"
         print_error(f'Unsupported operator type "{dirty_name}", please add the missing rule.', state)
@@ -951,20 +977,110 @@ def make_method_signature(
     definition: Union[AnnotationDef, MethodDef, SignalDef],
     spaces: bool,
     named_params: bool,
+    xref_param_types: bool,
+    state: State,
+    sanitize: bool
 ) -> str:
     qualifiers = None
     if isinstance(definition, (MethodDef, AnnotationDef)):
         qualifiers = definition.qualifiers
 
     varargs = qualifiers is not None and "vararg" in qualifiers
-    params = [
-        f"{parameter.type_name.type_name} {parameter.name}"
-        if named_params else parameter.type_name.type_name
-        for parameter in definition.parameters]
+    params = []
+    for parameter in definition.parameters:
+        type_name = parameter.type_name.type_name
+        if xref_param_types:
+            type_name = make_type(parameter.type_name.type_name, state)
 
+        if named_params:
+            params.append(f"{type_name} {parameter.name}")
+        else:
+            params.append(type_name)
+
+    out = definition.name.replace("operator ", "")
+    if definition.name.startswith("operator ") and sanitize:
+        out = sanitize_operator_name(definition.name, state)
+    if definition.name.startswith("operator "):
+        out += " "
+
+    out += "("
     sep = ", " if spaces else ","
     if varargs:
         params += ["..."]
-    out = f"{definition.name}({sep.join(params)})"
+
+    if len(params):
+        out += f"{sep.join(params)}"
+
+    out += ")"
 
     return out
+
+
+def get_method_qualifiers(definition: Union[AnnotationDef, MethodDef]):
+    out = ""
+    for qualifier in definition.qualifiers.split():
+        out += f"<abbr title=\"{get_qualifier_tooltip(qualifier)}\">{qualifier}</abbr>"
+    return out
+
+
+def get_qualifier_tooltip(qualifier: str):
+    virtual_msg = "This method should typically be overridden by the user to have any effect."
+    const_msg = "This method has no side effects. It doesn't modify any of the instance's member variables."
+    vararg_msg = "This method accepts any number of arguments after the ones described here."
+    constructor_msg = "This method is used to construct a type."
+    static_msg = "This method doesn't need an instance to be called, so it can be called directly using the class name."
+    operator_msg = "This method describes a valid operator to use with this type as left-hand operand."
+    bitfield_msg = "This value is an integer composed as a bitmask of the following flags."
+    void_msg = "No return value."
+
+    if qualifier == "virtual":
+        return virtual_msg
+    elif qualifier == "const":
+        return const_msg
+    elif qualifier == "vararg":
+        return vararg_msg
+    elif qualifier == "constructor":
+        return constructor_msg
+    elif qualifier == "static":
+        return static_msg
+    elif qualifier == "operator":
+        return operator_msg
+    elif qualifier == "bitfield":
+        return bitfield_msg
+    elif qualifier == "void":
+        return void_msg
+
+
+def make_setter_signature(class_def: ClassDef, property_def: PropertyDef, state: State) -> str:
+    if property_def.setter is None:
+        return ""
+
+    # If setter is a method available as a method definition, we use that.
+    if property_def.setter in class_def.methods:
+        setter = class_def.methods[property_def.setter][0]
+    # Otherwise we fake it with the information we have available.
+    else:
+        setter_params: List[ParameterDef] = []
+        setter_params.append(ParameterDef("value", property_def.type_name, None))
+        setter = MethodDef(property_def.setter, TypeName("void"), setter_params, None, None)
+
+    ret_type = make_type(get_method_return_type(setter), state)
+    signature = make_method_signature(setter, True, True, True, state, False)
+    return f"{ret_type} {signature}"
+
+
+def make_getter_signature(class_def: ClassDef, property_def: PropertyDef, state: State) -> str:
+    if property_def.getter is None:
+        return ""
+
+    # If getter is a method available as a method definition, we use that.
+    if property_def.getter in class_def.methods:
+        getter = class_def.methods[property_def.getter][0]
+    # Otherwise we fake it with the information we have available.
+    else:
+        getter_params: List[ParameterDef] = []
+        getter = MethodDef(property_def.getter, property_def.type_name, getter_params, None, None)
+
+    ret_type = make_type(get_method_return_type(getter), state)
+    signature = make_method_signature(getter, True, True, True, state, False)
+    return f"{ret_type} {signature}"
