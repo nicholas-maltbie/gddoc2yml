@@ -233,7 +233,7 @@ def get_property_yml(class_name: str, property_def: PropertyDef, state: State, c
         syntax += f" : {property_def.type_name.type_name}"
     if property_def.default_value:
         backtick = "`"
-        syntax += f" = {property_def.default_value.replace(backtick, "")}"
+        syntax += " = " + property_def.default_value.replace(backtick, "")
 
     property_yml = {
         "uid": property_id,
