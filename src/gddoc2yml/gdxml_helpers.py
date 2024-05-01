@@ -105,13 +105,23 @@ def make_type(klass: str, state: State) -> str:
         return f"``{klass}``"
 
     link_type = klass
+    is_array = False
+    if link_type.endswith("[]"):  # Typed array, strip [] to link to contained type.
+        link_type = link_type[:-2]
+        is_array = True
+
     if link_type in state.classes:
-        type_xref = f"<xref href=\"{link_type}\" data-throw-if-not-resolved=\"false\"></xref>"
-        return type_xref
+        if is_array:
+            return f"<xref href=\"{link_type}\" data-throw-if-not-resolved=\"false\">{link_type}[]</xref>"
+        return f"<xref href=\"{link_type}\" data-throw-if-not-resolved=\"false\"></xref>"
+
+    if klass == "void":
+        return "void"
 
     print_error(f'{state.current_class}.xml: Unresolved type "{link_type}".', state)
-    type_xref = f"``{link_type}``"
-    return type_xref
+    if is_array:
+        return f"``{link_type}[]``"
+    return f"``{link_type}``"
 
 
 def full_type_name(type_name: str, state: State) -> str:
@@ -966,24 +976,35 @@ def make_method_signature(
     definition: Union[AnnotationDef, MethodDef, SignalDef],
     spaces: bool,
     named_params: bool,
+    xref_param_types: bool,
+    state: State,
 ) -> str:
     qualifiers = None
     if isinstance(definition, (MethodDef, AnnotationDef)):
         qualifiers = definition.qualifiers
 
     varargs = qualifiers is not None and "vararg" in qualifiers
-    params = [
-        f"{parameter.type_name.type_name} {parameter.name}"
-        if named_params else parameter.type_name.type_name
-        for parameter in definition.parameters]
+    params = []
+    for parameter in definition.parameters:
+        type_name = parameter.type_name.type_name
+        if xref_param_types:
+            type_name = make_type(parameter.type_name.type_name, state)
+
+        if named_params:
+            params.append(f"{type_name} {parameter.name}")
+        else:
+            params.append(type_name)
 
     out = definition.name
+    out += "("
     sep = ", " if spaces else ","
     if varargs:
         params += ["..."]
 
     if len(params):
-        out += f"({sep.join(params)})"
+        out += f"{sep.join(params)}"
+
+    out += ")"
 
     return out
 
@@ -1001,7 +1022,8 @@ def make_setter_signature(class_def: ClassDef, property_def: PropertyDef, state:
         setter_params.append(ParameterDef("value", property_def.type_name, None))
         setter = MethodDef(property_def.setter, TypeName("void"), setter_params, None, None)
 
-    ret_type, signature = make_method_signature(class_def, setter, "", state)
+    ret_type = make_type(get_method_return_type(setter), state)
+    signature = make_method_signature(setter, True, True, True, state)
     return f"{ret_type} {signature}"
 
 
@@ -1017,6 +1039,7 @@ def make_getter_signature(class_def: ClassDef, property_def: PropertyDef, state:
         getter_params: List[ParameterDef] = []
         getter = MethodDef(property_def.getter, property_def.type_name, getter_params, None, None)
 
-    ret_type, signature = make_method_signature(class_def, getter, "", state)
+    ret_type = make_type(get_method_return_type(getter), state)
+    signature = make_method_signature(getter, True, True, True, state)
     return f"{ret_type} {signature}"
 

@@ -227,9 +227,9 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
     # Signal descriptions
     signals = []
     for signal in class_def.signals.values():
-        signature_short = make_method_signature(signal, False, False)
-        signature_spaces = make_method_signature(signal, True, False)
-        signature_spaces_named = make_method_signature(signal, True, True)
+        signature_short = make_method_signature(signal, False, False, False, state)
+        signature_spaces = make_method_signature(signal, True, False, False, state)
+        signature_spaces_named = make_method_signature(signal, True, True, False, state)
         full_name = f"{class_name}.{signature_short}"
         signal_yml = {
             "uid": full_name,
@@ -284,9 +284,9 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
     annotations = []
     for method_list in class_def.annotations.values():
         for _, m in enumerate(method_list):
-            signature_short = make_method_signature(m, False, False)
-            signature_spaces = make_method_signature(m, True, False)
-            signature_spaces_named = make_method_signature(m, True, True)
+            signature_short = make_method_signature(m, False, False, False, state)
+            signature_spaces = make_method_signature(m, True, False, False, state)
+            signature_spaces_named = make_method_signature(m, True, True, False, state)
             full_name = f"{class_name}.{signature_short}"
             annotation_yml = {
                 "uid": full_name,
@@ -325,9 +325,11 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
                 continue
 
             property_id = f"{class_name}.{property_def.name}"
-            syntax = f"var {property_def.name} : {property_def.type_name.type_name} = {property_def.default_value}"
+            syntax = f"var {property_def.name}"
             if len(property_def.type_name.type_name):
-                syntax = f"var {property_def.name} : {property_def.type_name.type_name} = {property_def.default_value}"
+                syntax += f" : {property_def.type_name.type_name}"
+            if property_def.default_value:
+                syntax += f" = {property_def.default_value.replace("`", "")}"
 
             property_yml = {
                 "uid": property_id,
@@ -347,7 +349,6 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
             }
 
             # Create property setter and getter records.
-
             property_setget = ""
 
             if property_def.setter is not None and not property_def.setter.startswith("_"):
@@ -361,6 +362,7 @@ def _get_class_yml(class_name: str, class_def: ClassDef, state: State) -> str:
             if property_setget != "":
                 property_yml["remarks"] = property_setget
 
+            properties.append(property_yml)
             references[property_def.type_name.type_name] = _make_reference_yml(property_def.type_name, state)
 
     children = signals + constants + annotations + properties
