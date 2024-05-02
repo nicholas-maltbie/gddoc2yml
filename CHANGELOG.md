@@ -3,8 +3,9 @@
 ## In Progress
 
 * Added fix to how id is formatted for operators, signals, and annotation.
-  * Made parenthesis optional and only included if arguments require.
+    * Made parenthesis optional and only included if arguments require.
 * Small fixes to typos in code and docs.
+* Added basic markdown linting to the project.
 
 ## v0.1.0 : 05-01-2024
 
