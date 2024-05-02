@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gddoc2yml"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
   { name="Nick Maltbie", email="nick.dmalt@gmail.com" },
 ]
@@ -36,6 +36,8 @@ keywords = ["godot", "docfx", "yml", "xml", "documentation"]
 [project.urls]
 Homepage = "https://github.com/nicholas-maltbie/gddoc2yml"
 Issues = "https://github.com/nicholas-maltbie/gddoc2yml/issues"
+GitHub = "https://github.com/nicholas-maltbie/gddoc2yml"
+Changelog = "https://github.com/nicholas-maltbie/gddoc2yml/blob/main/CHANGELOG.md"
 
 [project.scripts]
 gdxml2yml = "gddoc2yml.gdxml2yml:main"
