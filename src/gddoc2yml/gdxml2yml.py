@@ -183,9 +183,12 @@ def _get_method_yml(
         always_include_parenthesis: bool
 ) -> Tuple[Dict[str, Dict], Dict]:
     references = {}
-    signature_short = make_method_signature(method_def, False, False, False, state, True, always_include_parenthesis)
-    signature_spaces = make_method_signature(method_def, True, False, False, state, False, always_include_parenthesis)
-    signature_spaces_named = make_method_signature(method_def, True, True, False, state, False, always_include_parenthesis)
+    signature_short = make_method_signature(
+        method_def, False, False, False, state, True, always_include_parenthesis)
+    signature_spaces = make_method_signature(
+        method_def, True, False, False, state, False, always_include_parenthesis)
+    signature_spaces_named = make_method_signature(
+        method_def, True, True, False, state, False, always_include_parenthesis)
     full_name = f"{class_name}.{signature_short}"
 
     summary = ""
