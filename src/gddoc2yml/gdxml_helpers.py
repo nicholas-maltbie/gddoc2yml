@@ -1000,7 +1000,7 @@ def make_method_signature(
     out = definition.name.replace("operator ", "")
     if definition.name.startswith("operator ") and sanitize:
         out = sanitize_operator_name(definition.name, state)
-    if definition.name.startswith("operator "):
+    if definition.name.startswith("operator ") and spaces:
         out += " "
 
     out += "("
