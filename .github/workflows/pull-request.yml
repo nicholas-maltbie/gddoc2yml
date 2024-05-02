@@ -51,3 +51,10 @@ jobs:
         python3 -m pip install .
         gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes godot/platform/ios/doc_classes godot/platform/linuxbsd/doc_classes platform/macos/doc_classes platform/web/doc_classes platform/windows/doc_classes doc/api
         dotnet tool run docfx doc/docfx.json
+
+  markdown-lint:
+    name: 🧹 Markdown lint
+    runs-on: "ubuntu-20.04"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actionshub/markdownlint@main
