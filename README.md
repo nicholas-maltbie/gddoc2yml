@@ -13,6 +13,8 @@ python3 -m pip install gddoc2yml
 
 Then you will have the gdxml2yml command available:
 
+<!-- markdownlint-disable MD013 -->
+
 ```bash
 gdxml2yml
     usage: gdxml2yml [-h] [--filter FILTER] path [path ...] output
@@ -32,6 +34,8 @@ gdxml2yml -h
     --filter FILTER  The filepath pattern for XML files to filter
 ```
 
+<!-- markdownlint-enable MD013 -->
+
 ## Using gddoc2yml
 
 Export xml docs for your project with godot, us gdxml2yml to generate yml api,
@@ -39,7 +43,9 @@ then use the gd
 
 1. Generate xml docs for your project.
 
-    Install godot command line tool (see [Godot's Command Line Tutorial](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html#path) for details).
+    Install godot command line tool (see
+    [Godot's Command Line Tutorial](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html#path)
+    for details).
 
     Export docs for your gdscript to xml via the `--doctool` flag.
 
@@ -64,9 +70,8 @@ then use the gd
     gdxml2yml --filter doc/my-classes doc/my-classes ref out/my-classes/api
     ```
 
-3. Use your generated yml in docfx. see the [doc/docfx.json](doc/docfx.json) for an example.
-
-    Make sure to include your api folder in the doc content
+3. Use your generated yml in docfx. see the [doc/docfx.json](doc/docfx.json) for
+    an example. Make sure to include your api folder in the doc content
 
     ```json
     {
@@ -114,6 +119,19 @@ Lint using [flake8](https://github.com/pycqa/flake8/) tool.
 # Run flake8 from .flake8 config file
 # Install via python3 -m pip install flake8
 python3 -m flake8 .
+```
+
+#### Markdown Linting
+
+Markdown linting via [markdownlint](https://github.com/DavidAnson/markdownlint)
+can be installed via npm.
+
+```PowerShell
+# Install cli version via npm
+npm install -g markdownlint-cli
+
+# Run on local repo
+markdownlint .
 ```
 
 ### Tests

@@ -38,3 +38,14 @@ jobs:
         python -m twine check dist/*
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+
+  markdown-lint:
+    name: 🧹 Markdown lint
+    runs-on: "ubuntu-20.04"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm install -g markdownlint-cli
+      - run: markdownlint .
