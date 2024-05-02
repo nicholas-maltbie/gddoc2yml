@@ -13,6 +13,8 @@ python3 -m pip install gddoc2yml
 
 Then you will have the gdxml2yml command available:
 
+<!-- markdownlint-disable MD013 -->
+
 ```bash
 gdxml2yml
     usage: gdxml2yml [-h] [--filter FILTER] path [path ...] output
@@ -31,6 +33,8 @@ gdxml2yml -h
     -h, --help       show this help message and exit
     --filter FILTER  The filepath pattern for XML files to filter
 ```
+
+<!-- markdownlint-enable MD013 -->
 
 ## Using gddoc2yml
 
