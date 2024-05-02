@@ -979,7 +979,8 @@ def make_method_signature(
     named_params: bool,
     xref_param_types: bool,
     state: State,
-    sanitize: bool
+    sanitize: bool,
+    always_include_parenthesis: bool
 ) -> str:
     qualifiers = None
     if isinstance(definition, (MethodDef, AnnotationDef)):
@@ -1000,18 +1001,17 @@ def make_method_signature(
     out = definition.name.replace("operator ", "")
     if definition.name.startswith("operator ") and sanitize:
         out = sanitize_operator_name(definition.name, state)
-    if definition.name.startswith("operator "):
-        out += " "
 
-    out += "("
     sep = ", " if spaces else ","
     if varargs:
         params += ["..."]
 
     if len(params):
-        out += f"{sep.join(params)}"
-
-    out += ")"
+        if definition.name.startswith("operator ") and spaces:
+            out += " "
+        out += f"({sep.join(params)})"
+    elif always_include_parenthesis:
+        out += "()"
 
     return out
 
@@ -1065,7 +1065,7 @@ def make_setter_signature(class_def: ClassDef, property_def: PropertyDef, state:
         setter = MethodDef(property_def.setter, TypeName("void"), setter_params, None, None)
 
     ret_type = make_type(get_method_return_type(setter), state)
-    signature = make_method_signature(setter, True, True, True, state, False)
+    signature = make_method_signature(setter, True, True, True, state, False, False)
     return f"{ret_type} {signature}"
 
 
@@ -1082,5 +1082,5 @@ def make_getter_signature(class_def: ClassDef, property_def: PropertyDef, state:
         getter = MethodDef(property_def.getter, property_def.type_name, getter_params, None, None)
 
     ret_type = make_type(get_method_return_type(getter), state)
-    signature = make_method_signature(getter, True, True, True, state, False)
+    signature = make_method_signature(getter, True, True, True, state, False, False)
     return f"{ret_type} {signature}"

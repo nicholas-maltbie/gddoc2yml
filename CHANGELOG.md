@@ -1,5 +1,11 @@
 # Changelog
 
+## In Progress
+
+* Added fix to how id is formatted for operators, signals, and annotation.
+  * Made parenthesis optional and only included if arguments require.
+* Small fixes to typos in code and docs.
+
 ## v0.1.0 : 05-01-2024
 
 Added main features to project. Converting godot doctool to docfx compatible

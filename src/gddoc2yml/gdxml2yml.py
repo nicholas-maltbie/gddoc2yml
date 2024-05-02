@@ -179,12 +179,16 @@ def _make_reference_yml(type_def: TypeName, state: State):
 def _get_method_yml(
         class_name: str,
         method_def: Union[AnnotationDef, MethodDef, SignalDef],
-        state: State, method_type: str
+        state: State, method_type: str,
+        always_include_parenthesis: bool
 ) -> Tuple[Dict[str, Dict], Dict]:
     references = {}
-    signature_short = make_method_signature(method_def, False, False, False, state, True)
-    signature_spaces = make_method_signature(method_def, True, False, False, state, False)
-    signature_spaces_named = make_method_signature(method_def, True, True, False, state, False)
+    signature_short = make_method_signature(
+        method_def, False, False, False, state, True, always_include_parenthesis)
+    signature_spaces = make_method_signature(
+        method_def, True, False, False, state, False, always_include_parenthesis)
+    signature_spaces_named = make_method_signature(
+        method_def, True, True, False, state, False, always_include_parenthesis)
     full_name = f"{class_name}.{signature_short}"
 
     summary = ""
@@ -322,9 +326,9 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
     # Signal descriptions
     signals = []
     for signal in class_def.signals.values():
-        signature_short = make_method_signature(signal, False, False, False, state, False)
-        signature_spaces = make_method_signature(signal, True, False, False, state, False)
-        signature_spaces_named = make_method_signature(signal, True, True, False, state, False)
+        signature_short = make_method_signature(signal, False, False, False, state, False, False)
+        signature_spaces = make_method_signature(signal, True, False, False, state, False, False)
+        signature_spaces_named = make_method_signature(signal, True, True, False, state, False, False)
         full_name = f"{class_name}.{signature_short}"
         signal_yml = {
             "uid": full_name,
@@ -379,8 +383,7 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
     annotations = []
     for method_list in class_def.annotations.values():
         for _, m in enumerate(method_list):
-            signature_spaces_named = make_method_signature(m, True, True, False, state, False)
-            annotation_ref, annotation_yml = _get_method_yml(class_name, m, state, "Property")
+            annotation_ref, annotation_yml = _get_method_yml(class_name, m, state, "Property", False)
             annotation_yml["summary"] = "**Annotation**\n\n" + annotation_yml["summary"]
             references.update(annotation_ref)
             annotations.append(annotation_yml)
@@ -399,21 +402,21 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
     constructors = []
     for method_list in class_def.constructors.values():
         for _, m in enumerate(method_list):
-            constructor_ref, constructor_yml = _get_method_yml(class_name, m, state, "Constructor")
+            constructor_ref, constructor_yml = _get_method_yml(class_name, m, state, "Constructor", True)
             references.update(constructor_ref)
             constructors.append(constructor_yml)
 
     methods = []
     for method_list in class_def.methods.values():
         for _, m in enumerate(method_list):
-            method_ref, method_yml = _get_method_yml(class_name, m, state, "Method")
+            method_ref, method_yml = _get_method_yml(class_name, m, state, "Method", True)
             references.update(method_ref)
             constructors.append(method_yml)
 
     operators = []
     for method_list in class_def.operators.values():
         for _, m in enumerate(method_list):
-            operator_ref, operator_yml = _get_method_yml(class_name, m, state, "Operator")
+            operator_ref, operator_yml = _get_method_yml(class_name, m, state, "Operator", False)
             references.update(operator_ref)
             operators.append(operator_yml)
 
