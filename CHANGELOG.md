@@ -2,6 +2,8 @@
 
 ## In Progress
 
+## v0.1.1 : 05-02-2024
+
 * Added fix to how id is formatted for operators, signals, and annotation.
     * Made parenthesis optional and only included if arguments require.
 * Small fixes to typos in code and docs.
