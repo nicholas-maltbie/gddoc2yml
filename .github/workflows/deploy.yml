@@ -65,6 +65,9 @@ jobs:
         python3 -m pip install .
         gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes godot/platform/ios/doc_classes godot/platform/linuxbsd/doc_classes platform/macos/doc_classes platform/web/doc_classes platform/windows/doc_classes doc/api
         dotnet tool run docfx doc/docfx.json
+    - name: Add baseUrl to xrefmap
+      run: |
+        sed -i '2 i baseUrl: https://gddoc2yml.nickmaltbie.com/' doc/_site/xrefmap.yml
     - name: Fix permissions
       run: |
         chmod -c -R +rX "doc/_site/" | while read line; do
