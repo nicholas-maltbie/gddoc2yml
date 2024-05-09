@@ -162,3 +162,4 @@ cython_debug/
 ## Output for website
 doc/_site
 doc/api
+out

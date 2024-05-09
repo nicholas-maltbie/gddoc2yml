@@ -81,6 +81,15 @@ then use the gd
     },
     ```
 
+### Generating xrefmap for Godot Docs
+
+Included is an additional command, `gdxml2xrefmap` to generate
+an xrefmap for the godot docs.
+
+```bash
+gdxml2xrefmap godot/doc/classes godot/modules godot/platform/android/doc_classes out/godot_xrefmap.yml
+```
+
 ## References
 
 * [Godot -- CLI Reference](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html#command-line-reference)
