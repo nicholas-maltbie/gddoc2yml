@@ -90,7 +90,7 @@ def main() -> None:
     with open(args.output, "w", encoding="utf-8", newline="\n") as file:\
         file.write("### YamlMime:XRefMap")
         file.write("\n")
-        file.write(yaml.dump(xrefmap_yml, default_flow_style=False, sort_keys=True))
+        file.write(yaml.dump(xrefmap_yml, default_flow_style=False, sort_keys=False))
 
 
 def get_class_reference(class_def: ClassDef) -> Dict:
