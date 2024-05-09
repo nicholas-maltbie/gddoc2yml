@@ -87,7 +87,9 @@ def main() -> None:
         "references": references
     }
 
-    with open(args.output, "w", encoding="utf-8", newline="\n") as file:
+    with open(args.output, "w", encoding="utf-8", newline="\n") as file:\
+        file.write("### YamlMime:XRefMap")
+        file.write("\n")
         file.write(yaml.dump(xrefmap_yml, default_flow_style=False, sort_keys=True))
 
 
