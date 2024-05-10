@@ -14,14 +14,21 @@
       "content": [
         {
           "files": ["*.yml"],
-          "src": "api",
-          "dest": "api"
+          "src": "godot/api",
+          "dest": "godot/api"
         },
         {
           "files": [
             "toc.yml",
             "index.md"
           ]
+        },
+        {
+          "src": "godot",
+          "files": [
+            "index.md"
+          ],
+          "dest": "godot"
         }
       ],
       "resource": [

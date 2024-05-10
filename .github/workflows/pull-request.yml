@@ -49,7 +49,7 @@ jobs:
     - name: Test Build Site
       run: |
         python3 -m pip install .
-        gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes doc/api
+        gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes doc/godot/api
         gdxml2xrefmap godot/doc/classes godot/modules doc/xrefmap/godot_xrefmap.yml
         dotnet tool run docfx doc/docfx.json
         sed -i '2 i baseUrl: https://gddoc2yml.nickmaltbie.com/' doc/_site/xrefmap.yml

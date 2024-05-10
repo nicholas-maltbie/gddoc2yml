@@ -173,7 +173,7 @@ Build godot docs using latest gddoc2yml.
 python3 -m pip install .
 
 # Generate docs using gdxml2yml
-gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes doc/api
+gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes doc/godot/api
 
 # Generate xrefmap using gdxml2xrefmap
 gdxml2xrefmap godot/doc/classes godot/modules doc/xrefmap/godot_xrefmap.yml
