@@ -81,6 +81,15 @@ then use the gd
     },
     ```
 
+### Generating xrefmap for Godot Docs
+
+Included is an additional command, `gdxml2xrefmap` to generate
+an xrefmap for the godot docs.
+
+```bash
+gdxml2xrefmap godot/doc/classes godot/modules out/godot_xrefmap.yml
+```
+
 ## References
 
 * [Godot -- CLI Reference](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html#command-line-reference)
@@ -165,6 +174,9 @@ python3 -m pip install .
 
 # Generate docs using gdxml2yml
 gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes doc/api
+
+# Generate xrefmap using gdxml2xrefmap
+gdxml2xrefmap godot/doc/classes godot/modules doc/xrefmap/godot_xrefmap.yml
 
 # Startup docfx website
 dotnet tool run docfx --serve doc/docfx.json

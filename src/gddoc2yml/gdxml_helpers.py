@@ -18,8 +18,12 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
+import xml.etree.ElementTree as ET
+
 from .make_rst import State, DefinitionBase, TagState, MethodDef, \
     SignalDef, AnnotationDef, ParameterDef, ClassDef, PropertyDef, TypeName, \
+    ThemeItemDef, ConstantDef, \
     RESERVED_CODEBLOCK_TAGS, RESERVED_CROSSLINK_TAGS, GODOT_DOCS_PATTERN, \
     MARKUP_ALLOWED_PRECEDENT, MARKUP_ALLOWED_SUBSEQUENT
 from typing import List, Dict, TextIO, Tuple, Optional, Union
@@ -979,13 +983,13 @@ def make_method_signature(
     named_params: bool,
     xref_param_types: bool,
     state: State,
-    sanitize: bool,
-    always_include_parenthesis: bool
+    sanitize: bool
 ) -> str:
     qualifiers = None
     if isinstance(definition, (MethodDef, AnnotationDef)):
         qualifiers = definition.qualifiers
 
+    always_include_parenthesis: bool = definition is MethodDef
     varargs = qualifiers is not None and "vararg" in qualifiers
     params = []
     for parameter in definition.parameters:
@@ -1065,7 +1069,7 @@ def make_setter_signature(class_def: ClassDef, property_def: PropertyDef, state:
         setter = MethodDef(property_def.setter, TypeName("void"), setter_params, None, None)
 
     ret_type = make_type(get_method_return_type(setter), state)
-    signature = make_method_signature(setter, True, True, True, state, False, False)
+    signature = make_method_signature(setter, True, True, True, state, False)
     return f"{ret_type} {signature}"
 
 
@@ -1082,5 +1086,66 @@ def make_getter_signature(class_def: ClassDef, property_def: PropertyDef, state:
         getter = MethodDef(property_def.getter, property_def.type_name, getter_params, None, None)
 
     ret_type = make_type(get_method_return_type(getter), state)
-    signature = make_method_signature(getter, True, True, True, state, False, False)
+    signature = make_method_signature(getter, True, True, True, state, False)
     return f"{ret_type} {signature}"
+
+
+def get_file_list(paths: List[str]) -> List[str]:
+    file_list: List[str] = []
+
+    for path in paths:
+        if os.path.isdir(path):
+            for root, subdirs, files in os.walk(path):
+                file_list += (os.path.join(root, filename) for filename in files if filename.endswith(".xml"))
+        elif os.path.isfile(path):
+            if not path.endswith(".xml"):
+                print(f'Got non-.xml file "{path}" in input, skipping.')
+                continue
+            file_list.append(path)
+
+    return file_list
+
+
+def read_xml_data(files: List[str]) -> Dict[str, Tuple[ET.Element, str]]:
+    classes: Dict[str, Tuple[ET.Element, str]] = {}
+    for cur_file in get_file_list(files):
+        tree = ET.parse(cur_file)
+        doc = tree.getroot()
+        name = doc.attrib["name"]
+        classes[name] = (doc, cur_file)
+
+    return classes
+
+
+def get_class_state_from_docs(paths: List[str]) -> State:
+    files: List[str] = get_file_list(paths)
+    classes: Dict[str, Tuple[ET.Element, str]] = read_xml_data(files)
+    state = State()
+    for name, data in classes.items():
+        try:
+            state.parse_class(data[0], data[1])
+        except Exception as e:
+            print_error(f"{name}.xml: Exception while parsing class: {e}", state)
+    return state
+
+
+def get_class_uid(class_def: ClassDef) -> str:
+    return class_def.name
+
+
+def get_signal_uid(signal_def: SignalDef, class_def: ClassDef, state: State) -> str:
+    signature_short = make_method_signature(signal_def, False, False, False, state, False)
+    return f"{get_class_uid(class_def)}.{signature_short}"
+
+
+def get_constant_uid(constant_def: ConstantDef, class_def: ClassDef) -> str:
+    return f"{get_class_uid(class_def)}.{constant_def.name}"
+
+
+def get_method_uid(method_def: Union[AnnotationDef, MethodDef, SignalDef], class_def: ClassDef, state: State) -> str:
+    signature_short = make_method_signature(method_def, False, False, False, state, True)
+    return f"{get_class_uid(class_def)}.{signature_short}"
+
+
+def get_theme_uid(theme_item_def: ThemeItemDef, class_def: ClassDef) -> str:
+    return f"{get_class_uid(class_def)}.{theme_item_def.name}"

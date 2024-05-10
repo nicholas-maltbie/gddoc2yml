@@ -23,6 +23,9 @@
             "index.md"
           ]
         }
+      ],
+      "resource": [
+        "xrefmap/*.yml"
       ]
     }
   }

@@ -41,3 +41,4 @@ Changelog = "https://github.com/nicholas-maltbie/gddoc2yml/blob/main/CHANGELOG.m
 
 [project.scripts]
 gdxml2yml = "gddoc2yml.gdxml2yml:main"
+gdxml2xrefmap = "gddoc2yml.gdxml2xrefmap:main"

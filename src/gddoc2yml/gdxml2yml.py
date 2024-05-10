@@ -22,14 +22,15 @@ import argparse
 import os
 import pathvalidate
 import re
-import xml.etree.ElementTree as ET
 import yaml
 
-from .make_rst import AnnotationDef, MethodDef, SignalDef, State, PropertyDef, \
-    ClassDef, EnumDef, TypeName, print_error
-from .gdxml_helpers import format_text_block, make_link, make_method_signature, \
-    full_type_name, make_setter_signature, make_getter_signature, get_method_qualifiers, get_method_return_type
+from .make_rst import AnnotationDef, MethodDef, SignalDef, State, \
+    PropertyDef, ClassDef, EnumDef, TypeName
 from typing import Dict, List, Tuple, Union
+from .gdxml_helpers import make_link, format_text_block, full_type_name, \
+    make_method_signature, get_method_uid, get_method_qualifiers, get_method_return_type, \
+    make_setter_signature, make_getter_signature, get_class_uid, get_signal_uid, \
+    get_constant_uid, get_theme_uid, get_class_state_from_docs
 
 
 yml_mime_managed_reference_prefix = "### YamlMime:ManagedReference"
@@ -177,19 +178,15 @@ def _make_reference_yml(type_def: TypeName, state: State):
 
 
 def _get_method_yml(
-        class_name: str,
+        class_def: ClassDef,
         method_def: Union[AnnotationDef, MethodDef, SignalDef],
-        state: State, method_type: str,
-        always_include_parenthesis: bool
+        state: State, method_type: str
 ) -> Tuple[Dict[str, Dict], Dict]:
     references = {}
-    signature_short = make_method_signature(
-        method_def, False, False, False, state, True, always_include_parenthesis)
-    signature_spaces = make_method_signature(
-        method_def, True, False, False, state, False, always_include_parenthesis)
-    signature_spaces_named = make_method_signature(
-        method_def, True, True, False, state, False, always_include_parenthesis)
-    full_name = f"{class_name}.{signature_short}"
+    signature_short = make_method_signature(method_def, False, False, False, state, True)
+    signature_spaces = make_method_signature(method_def, True, False, False, state, False)
+    signature_spaces_named = make_method_signature(method_def, True, True, False, state, False)
+    full_name = get_method_uid(method_def, class_def, state)
 
     summary = ""
     if method_def.qualifiers:
@@ -207,7 +204,7 @@ def _get_method_yml(
         "id": signature_short,
         "langs": ["gdscript", "csharp"],
         "name": signature_spaces,
-        "nameWithType": f"{class_name}.{signature_spaces}",
+        "nameWithType": f"{class_def.name}.{signature_spaces}",
         "type": method_type,
         "syntax": {
             "content": syntax,
@@ -220,7 +217,7 @@ def _get_method_yml(
             ],
         },
         "summary": summary,
-        "parent": class_name,
+        "parent": class_def.name,
     }
 
     # add all types of parameter as references
@@ -276,7 +273,7 @@ def get_property_yml(class_name: str, property_def: PropertyDef, state: State, c
 def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
         class_name: str, class_def: ClassDef, state: State) -> str:
     class_yml = {
-        "uid": class_name,
+        "uid": get_class_uid(class_def),
         "commentId": "T:" + class_name,
         "id": class_name,
         "langs": ["gdscript", "csharp"],
@@ -326,13 +323,13 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
     # Signal descriptions
     signals = []
     for signal in class_def.signals.values():
-        signature_short = make_method_signature(signal, False, False, False, state, False, False)
-        signature_spaces = make_method_signature(signal, True, False, False, state, False, False)
-        signature_spaces_named = make_method_signature(signal, True, True, False, state, False, False)
-        full_name = f"{class_name}.{signature_short}"
+        signature_short = make_method_signature(signal, False, False, False, state, False)
+        signature_spaces = make_method_signature(signal, True, False, False, state, False)
+        signature_spaces_named = make_method_signature(signal, True, True, False, state, False)
+        signal_id = get_signal_uid(signal, class_def, state)
         signal_yml = {
-            "uid": full_name,
-            "commentId": f"E:{full_name}",
+            "uid": signal_id,
+            "commentId": f"E:{signal_id}",
             "id": signature_short,
             "langs": ["gdscript", "csharp"],
             "name": signature_spaces,
@@ -361,7 +358,7 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
     # Constant descriptions
     constants = []
     for constant in class_def.constants.values():
-        constant_id = f"{class_name}.{constant.name}"
+        constant_id = get_constant_uid(constant, class_def)
         constant_yml = {
             "uid": constant_id,
             "commentId": f"F:{constant_id}",
@@ -383,7 +380,7 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
     annotations = []
     for method_list in class_def.annotations.values():
         for _, m in enumerate(method_list):
-            annotation_ref, annotation_yml = _get_method_yml(class_name, m, state, "Property", False)
+            annotation_ref, annotation_yml = _get_method_yml(class_def, m, state, "Property")
             annotation_yml["summary"] = "**Annotation**\n\n" + annotation_yml["summary"]
             references.update(annotation_ref)
             annotations.append(annotation_yml)
@@ -402,28 +399,28 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
     constructors = []
     for method_list in class_def.constructors.values():
         for _, m in enumerate(method_list):
-            constructor_ref, constructor_yml = _get_method_yml(class_name, m, state, "Constructor", True)
+            constructor_ref, constructor_yml = _get_method_yml(class_def, m, state, "Constructor")
             references.update(constructor_ref)
             constructors.append(constructor_yml)
 
     methods = []
     for method_list in class_def.methods.values():
         for _, m in enumerate(method_list):
-            method_ref, method_yml = _get_method_yml(class_name, m, state, "Method", True)
+            method_ref, method_yml = _get_method_yml(class_def, m, state, "Method")
             references.update(method_ref)
             constructors.append(method_yml)
 
     operators = []
     for method_list in class_def.operators.values():
         for _, m in enumerate(method_list):
-            operator_ref, operator_yml = _get_method_yml(class_name, m, state, "Operator", False)
+            operator_ref, operator_yml = _get_method_yml(class_def, m, state, "Operator")
             references.update(operator_ref)
             operators.append(operator_yml)
 
     # Theme property descriptions
     theme_properties = []
     for theme_item_def in class_def.theme_items.values():
-        theme_item_id = f"{class_name}.{theme_item_def.name}"
+        theme_item_id = get_theme_uid(theme_item_def, class_def)
         syntax = f"{theme_item_def.type_name.type_name} {theme_item_def.name}"
         if theme_item_def.default_value is not None:
             syntax = f" = {theme_item_def.default_value}"
@@ -459,45 +456,6 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
         }, default_flow_style=False, sort_keys=False)
 
 
-def _get_file_list(paths: List[str]) -> List[str]:
-    file_list: List[str] = []
-
-    for path in paths:
-        if os.path.isdir(path):
-            for root, subdirs, files in os.walk(path):
-                file_list += (os.path.join(root, filename) for filename in files if filename.endswith(".xml"))
-        elif os.path.isfile(path):
-            if not path.endswith(".xml"):
-                print(f'Got non-.xml file "{path}" in input, skipping.')
-                continue
-            file_list.append(path)
-
-    return file_list
-
-
-def _read_xml_data(files: List[str]) -> Dict[str, Tuple[ET.Element, str]]:
-    classes: Dict[str, Tuple[ET.Element, str]] = {}
-    for cur_file in _get_file_list(files):
-        tree = ET.parse(cur_file)
-        doc = tree.getroot()
-        name = doc.attrib["name"]
-        classes[name] = (doc, cur_file)
-
-    return classes
-
-
-def _get_class_state_from_docs(paths: List[str]) -> State:
-    files: List[str] = _get_file_list(paths)
-    classes: Dict[str, Tuple[ET.Element, str]] = _read_xml_data(files)
-    state = State()
-    for name, data in classes.items():
-        try:
-            state.parse_class(data[0], data[1])
-        except Exception as e:
-            print_error(f"{name}.xml: Exception while parsing class: {e}", state)
-    return state
-
-
 def _get_parser():
     parser = argparse.ArgumentParser(description='Convert godot documentation xml file to yml for docfx.')
     parser.add_argument("path", nargs="+", help="A path to an XML file or a directory containing XML files to parse.")
@@ -509,7 +467,7 @@ def _get_parser():
 def main() -> None:
     args = _get_parser().parse_args()
 
-    state: State = _get_class_state_from_docs(args.path)
+    state: State = get_class_state_from_docs(args.path)
 
     # Create the output folder recursively if it doesn't already exist.
     os.makedirs(args.output, exist_ok=True)
