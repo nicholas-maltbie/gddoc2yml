@@ -175,6 +175,9 @@ python3 -m pip install .
 # Generate docs using gdxml2yml
 gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes doc/api
 
+# Generate xrefmap using gdxml2xrefmap
+gdxml2xrefmap godot/doc/classes godot/modules godot/platform/android/doc_classes out/godot_xrefmap.yml
+
 # Startup docfx website
 dotnet tool run docfx --serve doc/docfx.json
 ```

@@ -24,7 +24,7 @@ import re
 import yaml
 from pathlib import Path
 
-from .make_rst import State
+from .make_rst import State, EnumDef
 from .gdxml_helpers import *
 from typing import Dict
 
@@ -77,21 +77,50 @@ def main() -> None:
                 references.append(get_method_reference(method_def, class_def, state))
         for theme_item_def in class_def.theme_items.values():
             references.append(get_theme_item_reference(theme_item_def, class_def, state))
+        for _, enum_def in class_def.enums.items():
+            references.extend(get_enum_references(enum_def, class_def))
 
-        for enum_name, enum_def in class_def.enums.items():
-            pass
-        
-
+    def sort_by_uid(ref):
+        return ref["uid"]
+    references.sort(key = sort_by_uid)
     xrefmap_yml = {
         "baseUrl": base_url,
+        "sorted": True,
         "references": references
     }
 
-    with open(args.output, "w", encoding="utf-8", newline="\n") as file:\
+    with open(args.output, "w", encoding="utf-8", newline="\n") as file:
         file.write("### YamlMime:XRefMap")
         file.write("\n")
         file.write(yaml.dump(xrefmap_yml, default_flow_style=False, sort_keys=False))
 
+
+def get_enum_references(enum_def: EnumDef, class_def: ClassDef) -> List[Dict]:
+    class_name = class_def.name
+    enum_uid = f"{class_name}.{enum_def.name}"
+    enum_href_id = clean_href(f"enum-{class_name.lower()}-{enum_def.name}")
+    enum_ref = {
+        "uid": enum_uid,
+        "name": enum_def.name,
+        "href": f"classes/class_{class_name.lower()}.html#{enum_href_id}",
+        "commentId": f"T:{enum_uid}",
+        "nameWithType": f"{class_name}.{enum_def.name}",
+    }
+
+    enum_values = [enum_ref]
+    for value_name, value_def in enum_def.values.items():
+        value_uid = f"{enum_uid}.{value_name}"
+        value_href_id = clean_href(f"class-{class_name.lower()}-{value_def.definition_name}-{value_name}")
+        value_ref = {
+            "uid": value_uid,
+            "name": value_name,
+            "href": f"classes/class_{class_name.lower()}.html#{value_href_id}",
+            "commentId": f"F:{value_uid}",
+            "nameWithType": value_uid,
+        }
+        enum_values.append(value_ref)
+
+    return enum_values
 
 def get_class_reference(class_def: ClassDef) -> Dict:
     class_name = class_def.name
