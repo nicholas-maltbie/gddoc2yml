@@ -4,7 +4,7 @@ import shutil
 import unittest
 
 from importlib.resources import files
-from src.gddoc2yml import gdxml2yml, gdxml_helpers
+from src.gddoc2yml import gdxml_helpers
 from src.gddoc2yml.make_rst import State
 
 

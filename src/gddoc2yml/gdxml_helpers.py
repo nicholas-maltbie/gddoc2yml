@@ -989,7 +989,7 @@ def make_method_signature(
     if isinstance(definition, (MethodDef, AnnotationDef)):
         qualifiers = definition.qualifiers
 
-    always_include_parenthesis:bool = definition is MethodDef
+    always_include_parenthesis: bool = definition is MethodDef
     varargs = qualifiers is not None and "vararg" in qualifiers
     params = []
     for parameter in definition.parameters:
@@ -1132,16 +1132,20 @@ def get_class_state_from_docs(paths: List[str]) -> State:
 def get_class_uid(class_def: ClassDef) -> str:
     return class_def.name
 
+
 def get_signal_uid(signal_def: SignalDef, class_def: ClassDef, state: State) -> str:
     signature_short = make_method_signature(signal_def, False, False, False, state, False)
     return f"{get_class_uid(class_def)}.{signature_short}"
 
+
 def get_constant_uid(constant_def: ConstantDef, class_def: ClassDef) -> str:
     return f"{get_class_uid(class_def)}.{constant_def.name}"
+
 
 def get_method_uid(method_def: Union[AnnotationDef, MethodDef, SignalDef], class_def: ClassDef, state: State) -> str:
     signature_short = make_method_signature(method_def, False, False, False, state, True)
     return f"{get_class_uid(class_def)}.{signature_short}"
+
 
 def get_theme_uid(theme_item_def: ThemeItemDef, class_def: ClassDef) -> str:
     return f"{get_class_uid(class_def)}.{theme_item_def.name}"

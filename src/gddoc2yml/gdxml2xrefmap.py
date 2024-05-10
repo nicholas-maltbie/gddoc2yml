@@ -24,13 +24,16 @@ import re
 import yaml
 from pathlib import Path
 
-from .make_rst import State, EnumDef
-from .gdxml_helpers import *
-from typing import Dict
+from .make_rst import State, EnumDef, ClassDef, SignalDef, MethodDef, \
+    AnnotationDef, ConstantDef, ThemeItemDef, PropertyDef
+from .gdxml_helpers import get_class_state_from_docs, get_class_uid, get_signal_uid, \
+    make_method_signature, get_constant_uid, get_theme_uid, get_method_uid, sanitize_operator_name
+from typing import Dict, List, Union
 
 
 def _get_parser():
-    parser = argparse.ArgumentParser(description='Convert godot documentation xml files into a xrefmap compatibile with DoxFx.')
+    parser = argparse.ArgumentParser(
+        description='Convert godot documentation xml files into a xrefmap compatible with DoxFx.')
     parser.add_argument("path", nargs="+", help="A path to an XML file or a directory containing XML files to parse.")
     parser.add_argument("--filter", default="", help="The filepath pattern for XML files to filter.")
     parser.add_argument('output', help='output path to store xrefmap.')
@@ -56,33 +59,11 @@ def main() -> None:
         state.current_class = class_name
         class_def.update_class_group(state)
         references.append(get_class_reference(class_def))
-
-        for signal_def in class_def.signals.values():
-            references.append(get_signal_reference(signal_def, class_def, state))
-        for constant_def in class_def.constants.values():
-            references.append(get_constant_reference(constant_def, class_def, state))
-        for property_def in class_def.properties.values():
-            references.append(get_property_reference(property_def, class_def, state))
-        for method_list in class_def.annotations.values():
-            for _, annotation_def in enumerate(method_list):
-                references.append(get_method_reference(annotation_def, class_def, state))
-        for method_list in class_def.constructors.values():
-            for _, constructor_def in enumerate(method_list):
-                references.append(get_method_reference(constructor_def, class_def, state))
-        for method_list in class_def.operators.values():
-            for _, operator_def in enumerate(method_list):
-                references.append(get_method_reference(operator_def, class_def, state, True))
-        for method_list in class_def.methods.values():
-            for _, method_def in enumerate(method_list):
-                references.append(get_method_reference(method_def, class_def, state))
-        for theme_item_def in class_def.theme_items.values():
-            references.append(get_theme_item_reference(theme_item_def, class_def, state))
-        for _, enum_def in class_def.enums.items():
-            references.extend(get_enum_references(enum_def, class_def))
+        references.extend(get_child_references(class_def, state))
 
     def sort_by_uid(ref):
         return ref["uid"]
-    references.sort(key = sort_by_uid)
+    references.sort(key=sort_by_uid)
     xrefmap_yml = {
         "baseUrl": base_url,
         "sorted": True,
@@ -93,6 +74,30 @@ def main() -> None:
         file.write("### YamlMime:XRefMap")
         file.write("\n")
         file.write(yaml.dump(xrefmap_yml, default_flow_style=False, sort_keys=False))
+
+
+def get_child_references(class_def: ClassDef, state: State) -> List[Dict]:
+    references = []
+    for signal_def in class_def.signals.values():
+        references.append(get_signal_reference(signal_def, class_def, state))
+    for constant_def in class_def.constants.values():
+        references.append(get_constant_reference(constant_def, class_def, state))
+    for property_def in class_def.properties.values():
+        references.append(get_property_reference(property_def, class_def, state))
+    for _, annotation_def in enumerate(class_def.annotations.values()):
+        references.append(get_method_reference(annotation_def, class_def, state))
+    for _, constructor_def in enumerate(class_def.constructors.values()):
+        references.append(get_method_reference(constructor_def, class_def, state))
+    for _, operator_def in enumerate(class_def.operators.values()):
+        references.append(get_method_reference(operator_def, class_def, state, True))
+    for _, method_def in enumerate(class_def.methods.values()):
+        references.append(get_method_reference(method_def, class_def, state))
+    for theme_item_def in class_def.theme_items.values():
+        references.append(get_theme_item_reference(theme_item_def, class_def, state))
+    for _, enum_def in class_def.enums.items():
+        references.extend(get_enum_references(enum_def, class_def))
+
+    return references
 
 
 def get_enum_references(enum_def: EnumDef, class_def: ClassDef) -> List[Dict]:
@@ -121,6 +126,7 @@ def get_enum_references(enum_def: EnumDef, class_def: ClassDef) -> List[Dict]:
         enum_values.append(value_ref)
 
     return enum_values
+
 
 def get_class_reference(class_def: ClassDef) -> Dict:
     class_name = class_def.name
@@ -161,11 +167,17 @@ def get_constant_reference(constant_def: ConstantDef, class_def: ClassDef, state
     }
 
 
-def get_method_reference(method_def: AnnotationDef, class_def: ClassDef, state: State, include_params: bool = False) -> Dict:
+def get_method_reference(
+        method_def: AnnotationDef,
+        class_def: ClassDef,
+        state: State,
+        include_params: bool = False) -> Dict:
     class_name = class_def.name
     method_uid = get_method_uid(method_def, class_def, state)
     method_name = make_method_signature(method_def, True, False, False, state, False)
-    method_href_id = clean_href(f"class-{class_name.lower()}-{method_def.definition_name}-{make_method_href(method_def, state, include_params)}")
+    temp = make_method_href(method_def, state, include_params)
+    method_href_id = clean_href(
+        f"class-{class_name.lower()}-{method_def.definition_name}-{temp}")
     return {
         "uid": method_uid,
         "name": method_name,
@@ -188,7 +200,10 @@ def get_property_reference(property_def: PropertyDef, class_def: ClassDef, state
     }
 
 
-def make_method_href(definition: Union[AnnotationDef, MethodDef, SignalDef], state: State, include_params: bool = False) -> str:
+def make_method_href(
+        definition: Union[AnnotationDef, MethodDef, SignalDef],
+        state: State,
+        include_params: bool = False) -> str:
     qualifiers = None
     if isinstance(definition, (MethodDef, AnnotationDef)):
         qualifiers = definition.qualifiers
@@ -214,7 +229,8 @@ def make_method_href(definition: Union[AnnotationDef, MethodDef, SignalDef], sta
 def get_theme_item_reference(theme_item_def: ThemeItemDef, class_def: ClassDef, state: State) -> Dict:
     class_name = class_def.name
     theme_item_id = get_theme_uid(theme_item_def, class_def)
-    theme_item_href_id = clean_href(f"class-{class_name.lower()}-theme-{theme_item_def.data_name}-{theme_item_def.name}")
+    theme_item_href_id = clean_href(
+        f"class-{class_name.lower()}-theme-{theme_item_def.data_name}-{theme_item_def.name}")
     return {
         "uid": theme_item_id,
         "name": theme_item_def.name,
@@ -226,6 +242,7 @@ def get_theme_item_reference(theme_item_def: ThemeItemDef, class_def: ClassDef, 
 
 def clean_href(name: str) -> str:
     return re.sub(r'[^a-zA-Z\d\s:]', '-', name.replace("@", "")).lower()
+
 
 if __name__ == "__main__":
     main()

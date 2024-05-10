@@ -22,13 +22,15 @@ import argparse
 import os
 import pathvalidate
 import re
-import xml.etree.ElementTree as ET
 import yaml
 
 from .make_rst import AnnotationDef, MethodDef, SignalDef, State, \
     PropertyDef, ClassDef, EnumDef, TypeName
 from typing import Dict, List, Tuple, Union
-from .gdxml_helpers import *
+from .gdxml_helpers import make_link, format_text_block, full_type_name, \
+    make_method_signature, get_method_uid, get_method_qualifiers, get_method_return_type, \
+    make_setter_signature, make_getter_signature, get_class_uid, get_signal_uid, \
+    get_constant_uid, get_theme_uid, get_class_state_from_docs
 
 
 yml_mime_managed_reference_prefix = "### YamlMime:ManagedReference"
