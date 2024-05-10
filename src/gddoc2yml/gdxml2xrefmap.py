@@ -76,7 +76,7 @@ def main() -> None:
         file.write(yaml.dump(xrefmap_yml, default_flow_style=False, sort_keys=False))
 
 
-def get_child_references(class_def: ClassDef, state: State) -> List[Dict]:
+def get_child_references(class_def: ClassDef, state: State) -> List[Dict]:  # noqa: C901 # TODO: Fix this function!
     references = []
     for signal_def in class_def.signals.values():
         references.append(get_signal_reference(signal_def, class_def, state))
@@ -84,14 +84,18 @@ def get_child_references(class_def: ClassDef, state: State) -> List[Dict]:
         references.append(get_constant_reference(constant_def, class_def, state))
     for property_def in class_def.properties.values():
         references.append(get_property_reference(property_def, class_def, state))
-    for _, annotation_def in enumerate(class_def.annotations.values()):
-        references.append(get_method_reference(annotation_def, class_def, state))
-    for _, constructor_def in enumerate(class_def.constructors.values()):
-        references.append(get_method_reference(constructor_def, class_def, state))
-    for _, operator_def in enumerate(class_def.operators.values()):
-        references.append(get_method_reference(operator_def, class_def, state, True))
-    for _, method_def in enumerate(class_def.methods.values()):
-        references.append(get_method_reference(method_def, class_def, state))
+    for method_list in class_def.annotations.values():
+        for _, annotation_def in enumerate(method_list):
+            references.append(get_method_reference(annotation_def, class_def, state))
+    for method_list in class_def.constructors.values():
+        for _, constructor_def in enumerate(method_list):
+            references.append(get_method_reference(constructor_def, class_def, state))
+    for method_list in class_def.operators.values():
+        for _, operator_def in enumerate(method_list):
+            references.append(get_method_reference(operator_def, class_def, state, True))
+    for method_list in class_def.methods.values():
+        for _, method_def in enumerate(method_list):
+            references.append(get_method_reference(method_def, class_def, state))
     for theme_item_def in class_def.theme_items.values():
         references.append(get_theme_item_reference(theme_item_def, class_def, state))
     for _, enum_def in class_def.enums.items():
