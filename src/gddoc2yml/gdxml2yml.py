@@ -389,7 +389,7 @@ def _get_class_yml(  # noqa: C901 # TODO: Fix this function!
         for property_def in class_def.properties.values():
             if property_def.overrides:
                 continue
-            property_yml = get_property_yml(class_def, property_def, state, class_def)
+            property_yml = get_property_yml(class_name, property_def, state, class_def)
             properties.append(property_yml)
             references[property_def.type_name.type_name] = _make_reference_yml(property_def.type_name, state)
 

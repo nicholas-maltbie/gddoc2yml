@@ -20,10 +20,12 @@
         {
           "files": [
             "toc.yml",
-            "index.md",
-            "xrefmap/*.yml"
+            "index.md"
           ]
         }
+      ],
+      "resource": [
+        "xrefmap/*.yml"
       ]
     }
   }
