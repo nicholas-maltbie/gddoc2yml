@@ -20,15 +20,10 @@
         {
           "files": [
             "toc.yml",
-            "index.md"
+            "index.md",
+            "godot/index.md",
+            "godot/api/index.md"
           ]
-        },
-        {
-          "src": "godot",
-          "files": [
-            "index.md"
-          ],
-          "dest": "godot"
         }
       ],
       "resource": [

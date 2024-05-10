@@ -2,3 +2,6 @@
   href: index.md
 - name: Godot Docs
   href: godot/index.md
+  items:
+  - name: Class Reference
+    href: godot/api/index.md
