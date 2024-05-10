@@ -22,6 +22,7 @@
             "toc.yml",
             "index.md",
             "godot/index.md",
+            "godot/toc.yml",
             "godot/api/index.md"
           ]
         }

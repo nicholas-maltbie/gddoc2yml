@@ -1,7 +1,8 @@
 - name: gddoc2yml Docs
   href: index.md
 - name: Godot Docs
-  href: godot/index.md
   items:
+  - name: Home
+    href: godot/index.md
   - name: Class Reference
-    href: godot/api/index.md
+    href: godot/api/
