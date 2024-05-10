@@ -221,7 +221,8 @@ def make_method_href(
         params += ["..."]
 
     if len(params) and include_params:
-        out += f"-{"-".join(params)}"
+        params = "-".join(params)
+        out += f"-{params}"
 
     return out
 
