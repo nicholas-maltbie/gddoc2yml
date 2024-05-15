@@ -10,80 +10,12 @@ concurrency:
 
 jobs:
   validation:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [ "3.9", "3.10", "3.11", "3.12" ]
-        dotnet-version: [ '6.0.x' ]
+    uses: ./.github/workflows/test.yml
 
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Setup Dotnet 6.0.x
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '6.0.x'
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install build flake8 coverage twine
-        python -m pip install -r requirements.txt
-        dotnet tool restore
-    - name: Verify Build and Package
-      run: |
-        python -m build
-        python -m twine check dist/*
-    - name: Lint With Flake8
-      run: |
-        flake8 . --show-source
-    - name: Run Tests and Coverage Report
-      run: |
-        coverage run -m unittest discover
-        coverage report -m
-    - name: Test Build Site
-      run: |
-        python3 -m pip install .
-        gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes doc/godot/api
-        gdxml2xrefmap godot/doc/classes godot/modules doc/xrefmap/godot_xrefmap.yml
-        dotnet tool run docfx doc/docfx.json
-        sed -i '2 i baseUrl: https://gddoc2yml.nickmaltbie.com/' doc/_site/xrefmap.yml
-  
-  build-example-site:
-    name: build example site
-    runs-on: ubuntu-latest
-    container:
-      image: barichello/godot-ci:4.2
-    steps:
-    - uses: actions/checkout@v3
-    - run: git config --global --add safe.directory $GITHUB_WORKSPACE
-    - uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '7.x'
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: Install Tools
-      run: |
-        export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-        dotnet tool restore
-        python3 -m pip install gddoc2yml
-    - name: Build Example Site
-      run: |
-        export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-        cd examples
-        godot -v -e --path project --headless --quit-after 100
-        mkdir -p project/doc/godot
-        godot --path project --doctool doc/godot
-        godot --path project --doctool doc/classes --gdscript-docs res://scripts
-        gdxml2yml --filter project/doc/classes project/doc/classes project/doc/godot godot-docs-link/api
-        dotnet tool run docfx godot-docs-link/docfx.json
+  build:
+    uses: ./.github/workflows/build-site.yml
+    with:
+      uploadArtifact: false
 
   markdown-lint:
     name: 🧹 Markdown lint
