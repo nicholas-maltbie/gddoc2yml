@@ -1,2 +1,8 @@
-- name: Scripting API
-  href: api/
+- name: gddoc2yml Docs
+  href: index.md
+- name: Godot Docs
+  items:
+  - name: Home
+    href: godot/index.md
+  - name: Class Reference
+    href: godot/api/

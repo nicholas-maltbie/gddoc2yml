@@ -7,20 +7,23 @@
         "godot-template"
       ],
       "globalMetadata": {
-        "_appTitle": "Godot Documentation",
-        "_appFooter": "Godot Documentation",
+        "_appTitle": "gddoc2yml Documentation",
+        "_appFooter": "gddoc2yml Documentation",
         "_enableSearch": true
       },
       "content": [
         {
           "files": ["*.yml"],
-          "src": "api",
-          "dest": "api"
+          "src": "godot/api",
+          "dest": "godot/api"
         },
         {
           "files": [
             "toc.yml",
-            "index.md"
+            "index.md",
+            "godot/index.md",
+            "godot/toc.yml",
+            "godot/api/index.md"
           ]
         }
       ],
