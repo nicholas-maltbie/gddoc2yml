@@ -89,6 +89,7 @@ jobs:
     strategy:
       fail-fast: false
     needs: [build-docs, build-example-site]
+    steps:
     - name: Download Docs
       uses: actions/download-artifact@v4
       with:
