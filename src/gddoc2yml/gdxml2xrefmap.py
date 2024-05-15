@@ -138,7 +138,7 @@ def get_class_reference(class_def: ClassDef) -> Dict:
     return {
         "uid": class_uid,
         "name": class_def.name,
-        "href": f"classes/class_{class_name}.html#{class_name}",
+        "href": f"classes/class_{class_name.lower()}.html#{class_name}",
         "commentId": f"T:{class_uid}",
         "nameWithType": class_uid,
     }

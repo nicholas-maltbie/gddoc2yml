@@ -165,3 +165,7 @@ doc/xrefmap
 doc/godot/api/*.yml
 doc/example-self/api
 doc/example-external/api
+
+## Example docs
+examples/godot-docs-link/api
+examples/godot-docs-link/_site
