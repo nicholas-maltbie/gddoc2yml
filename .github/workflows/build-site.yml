@@ -40,12 +40,12 @@ jobs:
       run: |
         sed -i '2 i baseUrl: https://gddoc2yml.nickmaltbie.com/' doc/_site/xrefmap.yml
     - name: Upload Artifact
-        if: ${{ inputs.uploadArtifact }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: docs
-          path: doc/_site/
-          retention-days: 1
+      if: ${{ inputs.uploadArtifact }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: docs
+        path: doc/_site/
+        retention-days: 1
 
   build-example-site:
     name: build example site
@@ -77,12 +77,12 @@ jobs:
         gdxml2yml --filter project/doc/classes project/doc/classes project/doc/godot godot-docs-link/api
         dotnet tool run docfx godot-docs-link/docfx.json
     - name: Upload Artifact
-        if: ${{ inputs.uploadArtifact }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: example-site
-          path: examples/godot-docs-link/_site/
-          retention-days: 1
+      if: ${{ inputs.uploadArtifact }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: example-site
+        path: examples/godot-docs-link/_site/
+        retention-days: 1
 
   combine-artifacts:
     needs: [build-docs, build-example-site]
