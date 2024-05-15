@@ -8,7 +8,7 @@ Example docfx projects
 ## Creating Example Site
 
 ```bash
-#  Load project in editor at least once
+# Load project in editor at least once
 godot -v -e --path project --headless --quit-after 100
 
 # Build xml based documentation

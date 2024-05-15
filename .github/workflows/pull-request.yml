@@ -53,14 +53,44 @@ jobs:
         gdxml2xrefmap godot/doc/classes godot/modules doc/xrefmap/godot_xrefmap.yml
         dotnet tool run docfx doc/docfx.json
         sed -i '2 i baseUrl: https://gddoc2yml.nickmaltbie.com/' doc/_site/xrefmap.yml
+  
+  build-example-site:
+    name: build example site
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.2
+    steps:
+    - uses: actions/checkout@v3
+    - run: git config --global --add safe.directory $GITHUB_WORKSPACE
+    - uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '7.x'
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Tools
+      run: |
+        export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+        dotnet tool restore
+        python3 -m pip install gddoc2yml
+    - name: Build Example Site
+      run: |
+        cd examples
+        godot -v -e --path project --headless --quit-after 100
+        mkdir -p project/doc/godot
+        godot --path project --doctool doc/godot
+        godot --path project --doctool doc/classes --gdscript-docs res://scripts
+        gdxml2yml --filter project/doc/classes project/doc/classes project/doc/godot godot-docs-link/api
+        dotnet tool run docfx godot-docs-link/docfx.json
 
   markdown-lint:
     name: 🧹 Markdown lint
     runs-on: "ubuntu-20.04"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - run: npm install -g markdownlint-cli
-      - run: markdownlint .
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18
+    - run: npm install -g markdownlint-cli
+    - run: markdownlint .
