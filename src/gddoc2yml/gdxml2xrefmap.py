@@ -49,7 +49,7 @@ def main() -> None:
     os.makedirs(Path(args.output).parent, exist_ok=True)
     pattern = re.compile(args.filter)
 
-    base_url = "https://docs.godotengine.org/en/stable"
+    base_url = "https://docs.godotengine.org/en/stable/"
     references = []
     state.sort_classes()
     for class_name, class_def in state.classes.items():
