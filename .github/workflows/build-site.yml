@@ -85,6 +85,7 @@ jobs:
         retention-days: 1
 
   combine-artifacts:
+    if: ${{ inputs.uploadArtifact }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
