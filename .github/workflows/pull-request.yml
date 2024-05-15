@@ -76,6 +76,7 @@ jobs:
         python3 -m pip install gddoc2yml
     - name: Build Example Site
       run: |
+        export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
         cd examples
         godot -v -e --path project --headless --quit-after 100
         mkdir -p project/doc/godot
