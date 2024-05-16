@@ -10,4 +10,4 @@ godot documentation.
 ## Example
 
 See an example site built using gddoc2yml, checkout
-[Example Godot-Docs-Lin](https://gddoc2yml.nickmaltbie.com/example/index.html).
+[Example Godot-Docs-Link](https://gddoc2yml.nickmaltbie.com/example/index.html).

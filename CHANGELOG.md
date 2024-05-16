@@ -2,6 +2,12 @@
 
 ## In Progress
 
+* Added more fixes and support to gdxml2yml.
+* Added extra command to generate xrefmap that points to godot docs.
+* Added example docfx and godot project into the repo to show
+    how to generate documentation site and automated with a github
+    action workflow.
+
 ## v0.1.1 : 05-02-2024
 
 * Added fix to how id is formatted for operators, signals, and annotation.

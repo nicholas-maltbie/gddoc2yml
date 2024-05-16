@@ -11,15 +11,11 @@ Install gddoc2yml via pip
 python3 -m pip install gddoc2yml
 ```
 
-Then you will have the gdxml2yml command available:
+Then you will have the gdxml2yml and gdxml2xrefmap command available:
 
 <!-- markdownlint-disable MD013 -->
 
 ```bash
-gdxml2yml
-    usage: gdxml2yml [-h] [--filter FILTER] path [path ...] output
-    gdxml2yml: error: the following arguments are required: path, output
-
 gdxml2yml -h
     usage: gdxml2yml [-h] [--filter FILTER] path [path ...] output
 
@@ -32,6 +28,19 @@ gdxml2yml -h
     options:
     -h, --help       show this help message and exit
     --filter FILTER  The filepath pattern for XML files to filter
+
+gdxml2xrefmap -h
+    usage: gdxml2xrefmap [-h] [--filter FILTER] path [path ...] output
+
+    Convert godot documentation xml files into a xrefmap compatible with DoxFx.
+
+    positional arguments:
+    path             A path to an XML file or a directory containing XML files to parse.
+    output           output path to store xrefmap.
+
+    options:
+    -h, --help       show this help message and exit
+    --filter FILTER  The filepath pattern for XML files to filter.
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -88,6 +97,20 @@ an xrefmap for the godot docs.
 
 ```bash
 gdxml2xrefmap godot/doc/classes godot/modules out/godot_xrefmap.yml
+```
+
+**Note** the build for this repo contains an xrefmap that points to godot's
+documentation. You can reference this in your `docfx.json` file as a `xref`
+like so:
+
+```json
+{
+  "build": {
+    "xref": [
+      "https://gddoc2yml.nickmaltbie.com/xrefmap/godot_xrefmap.yml"
+    ]
+  }
+}
 ```
 
 ## References
