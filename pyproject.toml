@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Convert godot xml docs to docfx yml"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 classifiers = [
   "Development Status :: 3 - Alpha",
 
