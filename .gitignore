@@ -169,3 +169,6 @@ doc/example-external/api
 ## Example docs
 examples/godot-docs-link/api
 examples/godot-docs-link/_site
+
+## Debug docs
+tests/tmp
