@@ -2,6 +2,8 @@
 
 ## In Progress
 
+## v0.2.0 : 05-15-2024
+
 * Added more fixes and support to gdxml2yml.
 * Added extra command to generate xrefmap that points to godot docs.
 * Added example docfx and godot project into the repo to show
