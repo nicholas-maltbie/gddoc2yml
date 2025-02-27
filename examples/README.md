@@ -7,18 +7,21 @@ Example docfx projects
 
 ## Creating Example Site
 
-```bash
+```PowerShell
 # Load project in editor at least once
-godot -v -e --path project --headless --quit-after 100
+godot -v --path examples/project --headless --import
 
 # Build xml based documentation
-mkdir -p project/doc/godot
-godot --path project --doctool doc/godot
-godot --path project --doctool doc/classes --gdscript-docs res://scripts
+mkdir -p examples/project/doc/godot
+godot --path examples/project --doctool doc/godot
+godot --path examples/project --doctool doc/classes `
+    --gdscript-docs res://scripts --quit
 
 # Convert docs to yml
-gdxml2yml --filter project/doc/classes project/doc/classes project/doc/godot godot-docs-link/api
+gdxml2yml --filter examples/project/doc/classes `
+    examples/project/doc/classes examples/project/doc/godot `
+    examples/godot-docs-link/api
 
 # Create site with docfx, to run add the --serve flag at the end
-dotnet tool run docfx godot-docs-link/docfx.json
+dotnet tool run docfx examples/godot-docs-link/docfx.json
 ```

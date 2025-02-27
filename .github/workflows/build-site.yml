@@ -46,14 +46,40 @@ jobs:
         path: doc/_site/
         retention-days: 1
 
-  build-example-site:
+  build-gdscript-docs:
     name: build example site
     runs-on: ubuntu-latest
     container:
-      image: barichello/godot-ci:4.2
+      image: barichello/godot-ci:4.3
     steps:
     - uses: actions/checkout@v3
     - run: git config --global --add safe.directory $GITHUB_WORKSPACE
+    - name: Build GDScript Docs
+      run: |
+        godot -v --path examples/project --headless --import || true
+        mkdir -p examples/project/doc/godot
+        godot --path examples/project --doctool doc/godot
+        godot --path examples/project --doctool doc/classes --gdscript-docs res://scripts --quit
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: gdscript_data
+        path: examples/project/doc
+        retention-days: 1
+
+  build-example-site:
+    name: build example site
+    runs-on: ubuntu-latest
+    needs: build-gdscript-docs
+    steps:
+    - uses: actions/checkout@v3
+    - run: git config --global --add safe.directory $GITHUB_WORKSPACE
+    - name: Download GDScript Documentation
+      uses: actions/download-artifact@v4
+      with:
+        name: gdscript_data
+        path: examples/project/doc
     - uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '7.x'
@@ -68,13 +94,8 @@ jobs:
     - name: Build Example Site
       run: |
         export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-        cd examples
-        godot -v -e --path project --headless --quit-after 100
-        mkdir -p project/doc/godot
-        godot --path project --doctool doc/godot
-        godot --path project --doctool doc/classes --gdscript-docs res://scripts
-        gdxml2yml --filter project/doc/classes project/doc/classes project/doc/godot godot-docs-link/api
-        dotnet tool run docfx godot-docs-link/docfx.json
+        gdxml2yml --filter examples/project/doc/classes examples/project/doc/classes examples/project/doc/godot examples/godot-docs-link/api
+        dotnet tool run docfx examples/godot-docs-link/docfx.json
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
