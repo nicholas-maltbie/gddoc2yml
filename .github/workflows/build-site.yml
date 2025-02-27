@@ -47,7 +47,7 @@ jobs:
         retention-days: 1
 
   build-gdscript-docs:
-    name: build example site
+    name: build gdscript docs
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.3
@@ -91,7 +91,7 @@ jobs:
         export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
         dotnet tool restore
         python3 -m pip install gddoc2yml
-    - name: Build Example Site
+    - name: Build Site with DocFx and gdxml2yml
       run: |
         export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
         gdxml2yml --filter examples/project/doc/classes examples/project/doc/classes examples/project/doc/godot examples/godot-docs-link/api
