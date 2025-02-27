@@ -2,6 +2,9 @@
 
 ## In Progress
 
+* Updated godot version for test to 4.3.
+* Updated github actions associated with automation.
+
 ## v0.2.0 : 05-15-2024
 
 * Added more fixes and support to gdxml2yml.
