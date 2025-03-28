@@ -8,6 +8,9 @@ on:
         default: false
         type: boolean
 
+env:
+  GODOT_VERSION: 4.4
+
 jobs:
   build-docs:
     name: build documentation site
