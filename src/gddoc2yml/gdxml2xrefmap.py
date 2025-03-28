@@ -34,9 +34,9 @@ from typing import Dict, List, Union
 def _get_parser():
     parser = argparse.ArgumentParser(
         description='Convert godot documentation xml files into a xrefmap compatible with DoxFx.')
-    parser.add_argument("path", nargs="+", help="A path to an XML file or a directory containing XML files to parse.")
-    parser.add_argument("--filter", default="", help="The filepath pattern for XML files to filter.")
-    parser.add_argument('output', help='output path to store xrefmap.')
+    parser.add_argument("--path", nargs="+", help="A path to an XML file or a directory containing XML files to parse.")
+    parser.add_argument("--filter", nargs="+", help="The filepath patterns for XML files to filter.")
+    parser.add_argument('--output', help='output path to store xrefmap.')
     return parser
 
 
@@ -47,13 +47,13 @@ def main() -> None:
 
     # Create the output folder recursively if it doesn't already exist.
     os.makedirs(Path(args.output).parent, exist_ok=True)
-    pattern = re.compile(args.filter)
+    patterns = [re.compile(f) for f in args.filter] if args.filter else []
 
     base_url = "https://docs.godotengine.org/en/stable/"
     references = []
     state.sort_classes()
     for class_name, class_def in state.classes.items():
-        if args.filter and not pattern.search(class_def.filepath):
+        if not any(pattern.search(class_def.filepath) for pattern in patterns):
             continue
 
         state.current_class = class_name

@@ -33,8 +33,8 @@ jobs:
     - name: Build Site
       run: |
         python3 -m pip install .
-        gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes godot/platform/ios/doc_classes godot/platform/linuxbsd/doc_classes platform/macos/doc_classes platform/web/doc_classes platform/windows/doc_classes doc/godot/api
-        gdxml2xrefmap godot/doc/classes godot/modules godot/platform/android/doc_classes godot/platform/ios/doc_classes godot/platform/linuxbsd/doc_classes platform/macos/doc_classes platform/web/doc_classes platform/windows/doc_classes doc/xrefmap/godot_xrefmap.yml
+        gdxml2yml --path godot/doc/classes godot/modules godot/platform/android/doc_classes godot/platform/ios/doc_classes godot/platform/linuxbsd/doc_classes platform/macos/doc_classes platform/web/doc_classes platform/windows/doc_classes doc/godot/api
+        gdxml2xrefmap --path godot/doc/classes godot/modules godot/platform/android/doc_classes godot/platform/ios/doc_classes godot/platform/linuxbsd/doc_classes platform/macos/doc_classes platform/web/doc_classes platform/windows/doc_classes doc/xrefmap/godot_xrefmap.yml
         dotnet tool run docfx doc/docfx.json
     - name: Add baseUrl to xrefmap
       run: |
