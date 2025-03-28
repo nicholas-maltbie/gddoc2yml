@@ -68,7 +68,7 @@ jobs:
       run: |
         export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
         dotnet tool restore
-        python3 -m pip install gddoc2yml
+        python3 -m pip install .
 
     - name: Setup Godot ${{env.GODOT_VERSION}}
       uses: chickensoft-games/setup-godot@v2.1.1
