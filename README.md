@@ -76,7 +76,7 @@ then use the gd
     # Generate yml api for docfx.
     # Generates output at folder out/my-classes/api
     # Use the '--filter' flag to only generate docs for your files
-    gdxml2yml --filter doc/my-classes doc/my-classes ref out/my-classes/api
+    gdxml2yml --filter doc/my-classes --path doc/my-classes ref --output out/my-classes/api
     ```
 
 3. Use your generated yml in docfx. see the [doc/docfx.json](doc/docfx.json) for
@@ -199,7 +199,7 @@ git submodule update --init godot
 python3 -m pip install .
 
 # Generate docs using gdxml2yml
-gdxml2yml --filter godot/doc/classes/AABB.xml --path godot/doc/classes godot/modules godot/platform/android/doc_classes --output doc/godot/api
+gdxml2yml --path godot/doc/classes godot/modules godot/platform/android/doc_classes --output doc/godot/api
 
 # Generate xrefmap using gdxml2xrefmap
 gdxml2xrefmap --path godot/doc/classes godot/modules doc/xrefmap/godot_xrefmap.yml
