@@ -2,7 +2,11 @@
 
 ## In Progress
 
-* Updated godot version for test to 4.3.
+## v1.0.0 : 03-27-2025
+
+* Added new --filter and --path parameters to gdxml2yml and gdxml2xrefmap
+    * This is a breaking change, please see help for details.
+* Updated godot version for test to 4.4
 * Updated github actions associated with automation.
 
 ## v0.2.0 : 05-15-2024

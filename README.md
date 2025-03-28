@@ -17,30 +17,30 @@ Then you will have the gdxml2yml and gdxml2xrefmap command available:
 
 ```bash
 gdxml2yml -h
-    usage: gdxml2yml [-h] [--filter FILTER] path [path ...] output
+    usage: gdxml2yml [-h] --path PATH [PATH ...] [--filter FILTER [FILTER ...]] --output OUTPUT
 
     Convert godot documentation xml file to yml for docfx.
 
-    positional arguments:
-    path             A path to an XML file or a directory containing XML files to parse.
-    output           output folder to store all generated yml files.
-
     options:
-    -h, --help       show this help message and exit
-    --filter FILTER  The filepath pattern for XML files to filter
+      -h, --help            show this help message and exit
+      --path PATH [PATH ...]
+                            A path to an XML file or a directory containing XML files to parse.
+      --filter FILTER [FILTER ...]
+                            Regex filepath patterns for XML files to filter.
+      --output OUTPUT       Output folder to store all generated yml files.
 
 gdxml2xrefmap -h
-    usage: gdxml2xrefmap [-h] [--filter FILTER] path [path ...] output
+    usage: gdxml2xrefmap [-h] [--path PATH [PATH ...]] [--filter FILTER [FILTER ...]] [--output OUTPUT]
 
     Convert godot documentation xml files into a xrefmap compatible with DoxFx.
 
-    positional arguments:
-    path             A path to an XML file or a directory containing XML files to parse.
-    output           output path to store xrefmap.
-
     options:
-    -h, --help       show this help message and exit
-    --filter FILTER  The filepath pattern for XML files to filter.
+      -h, --help            show this help message and exit
+      --path PATH [PATH ...]
+                            A path to an XML file or a directory containing XML files to parse.
+      --filter FILTER [FILTER ...]
+                            Regex filepath patterns for XML files to filter.
+      --output OUTPUT       output path to store xrefmap.
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -76,7 +76,7 @@ then use the gd
     # Generate yml api for docfx.
     # Generates output at folder out/my-classes/api
     # Use the '--filter' flag to only generate docs for your files
-    gdxml2yml --filter doc/my-classes doc/my-classes ref out/my-classes/api
+    gdxml2yml --filter doc/my-classes --path doc/my-classes ref --output out/my-classes/api
     ```
 
 3. Use your generated yml in docfx. see the [doc/docfx.json](doc/docfx.json) for
@@ -96,7 +96,7 @@ Included is an additional command, `gdxml2xrefmap` to generate
 an xrefmap for the godot docs.
 
 ```bash
-gdxml2xrefmap godot/doc/classes godot/modules out/godot_xrefmap.yml
+gdxml2xrefmap --path godot/doc/classes godot/modules --output out/godot_xrefmap.yml
 ```
 
 **Note** the build for this repo contains an xrefmap that points to godot's
@@ -192,14 +192,17 @@ coverage report -m
 Build godot docs using latest gddoc2yml.
 
 ```bash
+# Download submodules
+git submodule update --init godot
+
 # Install from repo
 python3 -m pip install .
 
 # Generate docs using gdxml2yml
-gdxml2yml godot/doc/classes godot/modules godot/platform/android/doc_classes doc/godot/api
+gdxml2yml --path godot/doc/classes godot/modules godot/platform/android/doc_classes --output doc/godot/api
 
 # Generate xrefmap using gdxml2xrefmap
-gdxml2xrefmap godot/doc/classes godot/modules doc/xrefmap/godot_xrefmap.yml
+gdxml2xrefmap --path godot/doc/classes godot/modules doc/xrefmap/godot_xrefmap.yml
 
 # Startup docfx website
 dotnet tool run docfx --serve doc/docfx.json
