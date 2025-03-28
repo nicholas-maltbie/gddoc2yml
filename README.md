@@ -194,7 +194,7 @@ Build godot docs using latest gddoc2yml.
 
 ```bash
 # Download submodules
-git submodule update --init
+git submodule update --init godot
 
 # Install from repo
 python3 -m pip install .
