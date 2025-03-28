@@ -9,7 +9,7 @@ on:
         type: boolean
 
 env:
-  GODOT_VERSION: 4.4
+  GODOT_VERSION: 4.4.0
 
 jobs:
   build-docs:
@@ -49,8 +49,8 @@ jobs:
         path: doc/_site/
         retention-days: 1
 
-  build-example-docs:
-    name: build gdscript docs
+  build-example-site:
+    name: build example site
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -101,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-    needs: [build-docs, build-example-docs]
+    needs: [build-docs, build-example-site]
     steps:
     - name: Download Docs
       uses: actions/download-artifact@v4
