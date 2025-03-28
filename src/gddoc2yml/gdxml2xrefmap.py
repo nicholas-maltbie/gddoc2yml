@@ -35,7 +35,7 @@ def _get_parser():
     parser = argparse.ArgumentParser(
         description='Convert godot documentation xml files into a xrefmap compatible with DoxFx.')
     parser.add_argument("--path", nargs="+", help="A path to an XML file or a directory containing XML files to parse.")
-    parser.add_argument("--filter", nargs="+", help="The filepath patterns for XML files to filter.")
+    parser.add_argument("--filter", nargs="+", help="Regex filepath patterns for XML files to filter.")
     parser.add_argument('--output', help='output path to store xrefmap.')
     return parser
 
@@ -53,7 +53,7 @@ def main() -> None:
     references = []
     state.sort_classes()
     for class_name, class_def in state.classes.items():
-        if not any(pattern.search(class_def.filepath) for pattern in patterns):
+        if args.filter and not any(pattern.search(class_def.filepath) for pattern in patterns):
             continue
 
         state.current_class = class_name

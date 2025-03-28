@@ -460,9 +460,8 @@ def _get_parser():
     parser = argparse.ArgumentParser(description='Convert godot documentation xml file to yml for docfx.')
     parser.add_argument(
         "--path", required=True, nargs="+", help="A path to an XML file or a directory containing XML files to parse.")
-    parser.add_argument("--filter", nargs="+", help="The filepath patterns for XML files to filter.")
+    parser.add_argument("--filter", nargs="+", help="Regex filepath patterns for XML files to filter.")
     parser.add_argument('--output', required=True, help='Output folder to store all generated yml files.')
-    parser.add_argument('--verbose', type=bool, help='Verbose output as part of project.')
     return parser
 
 
@@ -478,7 +477,7 @@ def main() -> None:
     class_files = []
     state.sort_classes()
     for class_name, class_def in state.classes.items():
-        if not any(pattern.search(class_def.filepath) for pattern in patterns):
+        if args.filter and not any(pattern.search(class_def.filepath) for pattern in patterns):
             continue
 
         state.current_class = class_name
